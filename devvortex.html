@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>DevVortex</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>DevVortex Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*3PzGSkwMnJph392Z.png">
+            <h2>Enumeration</h2>
+            <p class="script-container">
+                # Nmap 7.94 scan initiated Wed Dec  6 12:30:49 2023 as: nmap -v -sC -sV -oN nmap/10.10.11.242 10.10.11.242<br>
+                Nmap scan report for 10.10.11.242<br>
+                Host is up (0.27s latency).<br>
+                Not shown: 998 closed tcp ports (conn-refused)<br>
+                PORT   STATE SERVICE VERSION<br>
+                22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.9 (Ubuntu Linux; protocol 2.0)<br>
+                | ssh-hostkey:<br>
+                |   3072 48:ad:d5:b8:3a:9f:bc:be:f7:e8:20:1e:f6:bf:de:ae (RSA)<br>
+                |   256 b7:89:6c:0b:20:ed:49:b2:c1:86:7c:29:92:74:1c:1f (ECDSA)<br>
+                |_  256 18:cd:9d:08:a6:21:a8:b8:b6:f7:9f:8d:40:51:54:fb (ED25519)<br>
+                80/tcp open  http    nginx 1.18.0 (Ubuntu)<br>
+                |_http-server-header: nginx/1.18.0 (Ubuntu)<br>
+                | http-methods:<br>
+                |_  Supported Methods: GET HEAD POST OPTIONS<br>
+                |_http-title: Did not follow redirect to http://devvortex.htb/<br>
+                Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel<br><br>
+
+                Read data files from: /opt/homebrew/bin/../share/nmap<br>
+                Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .<br>
+                # Nmap done at Wed Dec  6 12:32:05 2023 -- 1 IP address (1 host up) scanned in 75.89 seconds<br>
+            </p>
+            <p class="paragraph">
+                Key findings:<br><br>
+
+                - SSH (Port 22): OpenSSH 8.2p1 on Ubuntu.<br>
+                - HTTP (Port 80): Nginx 1.18.0 on Ubuntu, redirecting to http://devvortex.htb/.<br>
+                - The IP address and domain were added to /etc/hosts:<br>
+                <p class="script-container">
+                    echo "10.10.14.242 devvortex.htb" | sudo tee -a /etc/hosts
+                </p>
+            </p>
+            <h2>Initial Foothold</h2>
+            <p class="paragraph">
+                Exploration of devvortex.htb was initially unfruitful.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*4g4htRurNi1uWGgu2cXNmg.png">
+            <p class="paragraph">
+                The first significant step was directory enumeration using Gobuster:
+                <p class="script-container">
+                    gobuster dir -u http://devvortex.htb/ -w $wordlists/content/dirs-and-files-medium.txt -t 50<br>
+                    ===============================================================<br>
+                    Gobuster v3.5<br>
+                    by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)<br>
+                    ===============================================================<br>
+                    [+] Url:                     http://devvortex.htb/<br>
+                    [+] Method:                  GET<br>
+                    [+] Threads:                 50<br>
+                    [+] Wordlist:                /Users/mekaneo/Hacking/wordlists/content/dirs-and-files-medium.txt<br>
+                    [+] Negative Status codes:   404<br>
+                    [+] User Agent:              gobuster/3.5<br>
+                    [+] Timeout:                 10s<br>
+                    ===============================================================<br>
+                    2023/12/08 17:32:43 Starting gobuster in directory enumeration mode<br>
+                    ===============================================================<br>
+                    /images               (Status: 301) [Size: 178] [--> http://devvortex.htb/images/]<br>
+                    /css                  (Status: 301) [Size: 178] [--> http://devvortex.htb/css/]<br>
+                    /js                   (Status: 301) [Size: 178] [--> http://devvortex.htb/js/]<br>
+                    ===============================================================<br>
+                    2023/12/08 17:32:51 Finished<br>
+                    ===============================================================<br>
+                </p>
+                Nothing interesing found. DNS subdomain enumeration revealed dev.devvortex.htb:
+                <p class="script-container">
+                    gobuster dns -d devvortex.htb -w $wordlists/dns/subdomains-top1million-20000.txt -t 20<br>
+                    ===============================================================<br>
+                    Gobuster v3.5<br>
+                    by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)<br>
+                    ===============================================================<br>
+                    [+] Domain:     devvortex.htb<br>
+                    [+] Threads:    20<br>
+                    [+] Timeout:    1s<br>
+                    [+] Wordlist:   /Users/mekaneo/Hacking/wordlists/dns/subdomains-top1million-20000.txt<br>
+                    ===============================================================<br>
+                    2023/12/08 17:37:57 Starting gobuster in DNS enumeration mode<br>
+                    ===============================================================<br>
+                    Found: dev.devvortex.htb<br><br>
+
+                    Progress: 1013 / 19967 (5.07%)^C<br>
+                    [!] Keyboard interrupt detected, terminating.<br><br>
+
+                    ===============================================================<br>
+                    2023/12/08 17:38:02 Finished<br>
+                    ===============================================================
+                </p>
+                Found: dev.devvortex.htb<br><br>
+                I've added it to my /etc/hosts and proceeded to explore this website. Hitting /robots.txt<br>revealed it's content and it became clear: this is a Joomla CMS.
+            </p>
+            <img src="https://images.prismic.io/superpupertest/0843a46c-5aba-45cf-a55b-d3344d3d9d50_dev.devvortex.robots.page.png?auto=format&dpr=3">
+            <p class="paragraph">
+                there is an adimistrator login portal
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*8K6AklhEE80eHskSamSuGw.png">
+            <p class="paragraph">
+                Joomla interesting lets see if we can find out the version
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*GUepzt71T5a_rn7rlip83Q.png">
+            <p class="paragraph">
+                Joomla 4.2 lets dig and search for some exploits<br><br>
+                didnt take long and we found<br><br>
+                https://github.com/Acceis/exploit-CVE-2023-23752<br><br>
+                NO LUCK!
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*o019wmq202soUHxiTat_kg.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*WuEhtNXJ79kOXEiVpaCrzA.png">
+            <p class="paragraph">
+                Problem Solved!!!<br><br>
+                Lets login to lewis on the administrator portal<br><br>
+                poking and lurking around to find a way to get a shell brought me to<br><br>
+                System ➡ Templates ➡ Administrator Templates.<br><br>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*X_IYA_Ra2QfUvexbq28pOg.png">
+            <p class="paragraph">
+                browsing to http://dev.devvortex.htb/administrator/templates/atum/login.php<br><br>
+                We got a Shell!!!
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ei815y_016MkwAt-8cU9uQ.png">
+            <p class="paragraph">
+                its under /home/logan but we cant open it..<br><br>
+                a few minutes later(not)
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*kUXyNAjfZP4PkvvrNg0Oyw.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*dLS0fKUf3BpvIBmSFQT8vg.png">
+            <p class="paragraph">
+                got the hash<br><br>
+                hashcat -a 0 -m 3200 hash /usr/share/wordlists/rockyou.txt — show<br>
+                $2y$10$IT4k5kmSGvHSO9d6M/1w0eYiB5Ne9XzArQRFJTGThNiy/yBtkIj12:tequieromucho<br><br>
+                lets go for the ssh
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*dPOga9aAAedNzDQYwRld3g.png">
+            <p class="paragraph">
+                got the user flag<br><br>
+                now to the Privesc
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*zU4EnMtZ2x6eqynL4Ef7Zg.png">
+            <p class="paragraph">
+                found this POC https://github.com/canonical/apport/commit/e5f78cc89f1f5888b6a56b785dddcb0364c48ecb?source=post<br>page-----605d60f2d5ef-------------------------------- but it didnt worked after reading the error massage it seemed<br>that we need a crash report so lets create one
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*BBldRskk3rJG7Zt4vM06kA.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*e4d1uvsnY2yJTVnrztA4zA.png">
+            <p class="paragraph">
+                Choosing to view the report, a Vi editor appeared, and I immediately remembered that by passing the !:command<br>syntax, I was able to execute code. Since I was running the binary in a privileged context, I could try gain root <br>privileges by executing the !/bin/bash command and it worked!
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*PYg9r8ej9KBn2i-loFZRrw.png">
+            <p class="paragraph">
+                We Get Root Hope You Like This Reading
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

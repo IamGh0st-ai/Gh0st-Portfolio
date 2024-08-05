@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Codify</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Codify Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ID8L0-CgSOZUUzAX8r0X_Q.png">
+            <h2>Information Gathering</h2>
+            <p class="paragraph">
+                First I fired up the Nmap and the result was like...
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*YBKV17QJI7p9CIkiGT9Dcg.png">
+            <p class="paragraph">
+                That’s nice, let’s access the IP address through the browser. Ok, we have an application running<br>on this site that allows us to execute node js code in a sandbox environment.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*IkBxG4UDHo0-gKb3aS6r0g.png">
+            <p class="paragraph">
+                It says it is using the vm2 library to run Javascript code in a sandbox environment. After looking<br>for current vulnerabilities in the vm2 library, I discovered CVE-2023–30547, which allows<br>an attacker to bypass sandbox limitations and execute arbitrary code in the host environment. To get a<br>look at this vulnerability, attached the link to have a lookup.<br><br>
+                After doing some research found the exploit for this vulnerability.<br><br>
+                After modifying the PoC command and tested whether the exploit was working in the expected manner.<br>The command I used “cat /etc/passwd”, and got the result.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*6IFaKUVUaSoNIQVO1HlWpQ.png">
+            <p class="paragraph">
+                Now, it’s time to get a reverse shell.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*5UnVZkwtIbTe-ZntjnsJKw.png">
+            <p class="paragraph">
+                Great! now we got a shell as svc user. We have a user home directory “Joshua” but we can’t move into<br>that directory. So, it’s time to enumerate.<br><br>
+                In the /var/www/contact folder, found a tickets.db folder, on opening it, I can able to see a password hash for user Joshua.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Dw9P8b70FHRBYw2BgIqQ6Q.png">
+            <p class="paragraph">
+                Let’s crack the password using John.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*bjG7Sn-2rmyijPbr_5EMCA.png">
+            <p class="paragraph">
+                We got the password for Joshua. Let’s we can SSH using this credential. We Have User flag.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*obwuurXZfGaACddhrleEcQ.png">
+            <h2>Privilege escalation</h2>
+            <p class="paragraph">
+                By running “sudo -l” we can see that we have root privileges to execute the “mysql-backup.sh” script.<br><br>
+                On opening the script:
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ScHHL_JE8jVCKkCrDWWMBg.png">
+            <p class="paragraph">
+                Check the comparison it does for passwords, I think it is not a safe way to do that. Let’s<br>research something on this. After some research, I discovered that if the right side of == is not quoted, bash uses pattern matching instead of interpreting it as a string.<br>If we give wildcard “*” it gives some weird output, it says Password confirmed, so we need to brute force the password.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*SuYPbplc6mwFWIJGBDi_BA.png">
+            <p class="paragraph">
+                Here is the Python script I got from another hacker on medium:
+                <p class="script-container">
+                    import string<br>
+                    import subprocess<br>
+                    all = list(string.ascii_letters + string.digits)<br>
+                    password = ""<br>
+                    found = False<br><br>
+
+                    while not found:<br>
+                    &nbsp;&nbsp;for character in all:<br>
+                    &nbsp;&nbsp;command = f"echo '{password}{character}*' | sudo /opt/scripts/mysql-backup.sh"<br>
+                    &nbsp;&nbsp;output = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True).stdout<br><br>
+
+                    &nbsp;&nbsp;if "Password confirmed!" in output:<br>
+                    &nbsp;&nbsp;password += character<br>
+                    &nbsp;&nbsp;print(password)<br>
+                                break<br>
+                    &nbsp;else:<br>
+                    &nbsp;&nbsp;found = True<br>
+                </p>
+                On executing the script, we got the password for root.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*vAmKoxNmiwBW5kbWeoBpqA.png">
+            <p class="paragraph">
+                We got the root password.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*aTOvZRamMAbKsV3Xe8o-7w.png">
+            <p class="paragraph">
+                Thank You for reading!
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

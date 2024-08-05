@@ -1,0 +1,43 @@
+body {
+    background-image: url('https://img.pikbest.com/origin/09/11/11/65YpIkbEsT72b.png!w700wp');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.content {
+    color: white;
+    background-color: black;
+    position: relative;
+}
+header {
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+.header-content {
+    display: flex;
+    align-items: center;
+}
+.logo {
+    width: 150px;
+    height: auto;
+    margin: 10px;
+}
+
+
+
+
+.footer {
+    background-color: black;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    bottom: 0;
+    width: 100%;
+}
+.footer a {
+    color: #ffcc00;
+    text-decoration: underline;
+}
+.footer a:hover {
+    text-decoration: underline;
+}

